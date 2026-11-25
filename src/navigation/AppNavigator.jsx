@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SHADOWS } from '../theme/theme';
+import { useApp } from '../context/AppContext';
 
 import HomeScreen from '../screens/HomeScreen';
 import ExploreScreen from '../screens/ExploreScreen';
@@ -18,13 +18,21 @@ const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 function MainTabs() {
+  const { colors } = useApp();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textMuted,
-        tabBarStyle: styles.tabBar,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarStyle: [
+          styles.tabBar,
+          {
+            backgroundColor: colors.card,
+            borderTopColor: colors.border,
+          },
+        ],
         tabBarLabelStyle: styles.tabLabel,
         tabBarIcon: ({ focused, color }) => {
           const icons = {
@@ -36,7 +44,7 @@ function MainTabs() {
               : 'chatbubble-ellipses-outline',
             Profile: focused ? 'person' : 'person-outline',
           };
-          return <Ionicons name={icons[route.name]} size={22} color={color} />;
+          return <Ionicons name={icons[route.name]} size={21} color={color} />;
         },
       })}
     >
@@ -71,22 +79,15 @@ export default function AppNavigator() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 22 : 14,
-    left: 16,
-    right: 16,
-    height: 66,
-    borderRadius: 24,
-    backgroundColor: COLORS.white,
-    borderTopWidth: 0,
-    paddingBottom: 8,
+    height: Platform.OS === 'ios' ? 84 : 64,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 8,
     paddingTop: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.medium,
+    borderTopWidth: 1,
+    elevation: 0,
   },
   tabLabel: {
     fontSize: 11,
     fontWeight: '600',
+    letterSpacing: 0.1,
   },
 });

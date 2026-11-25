@@ -7,99 +7,119 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme/theme';
+import { SPACING, RADIUS, SHADOWS } from '../theme/theme';
 import { useApp } from '../context/AppContext';
 
 export default function PropertyCard({ property, onPress, compact = false }) {
-  const { wishlist, toggleWishlist, compareList, toggleCompare } = useApp();
+  const { wishlist, toggleWishlist, compareList, toggleCompare, colors } =
+    useApp();
   const isSaved = wishlist.includes(property.id);
   const isComparing = compareList.includes(property.id);
 
   return (
     <TouchableOpacity
-      activeOpacity={0.9}
+      activeOpacity={0.92}
       onPress={onPress}
-      style={[styles.card, compact && styles.compactCard]}
+      style={[
+        styles.card,
+        { backgroundColor: colors.card, borderColor: colors.border },
+        compact && styles.compactCard,
+      ]}
     >
       <View style={[styles.imageBox, compact && styles.compactImageBox]}>
         <Image source={{ uri: property.images[0] }} style={styles.image} />
 
-        {/* Category / Status Pill */}
-        <View style={styles.categoryPill}>
-          <Text style={styles.categoryText}>{property.category}</Text>
+        <View
+          style={[
+            styles.categoryTag,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <Text style={[styles.categoryText, { color: colors.textPrimary }]}>
+            {property.category}
+          </Text>
         </View>
 
-        {/* Action Buttons */}
         <View style={styles.topActions}>
           <TouchableOpacity
-            style={[styles.circleBtn, isComparing && styles.compareActiveBtn]}
+            style={[
+              styles.circleBtn,
+              {
+                backgroundColor: isComparing ? colors.primary : colors.card,
+                borderColor: isComparing ? colors.primary : colors.border,
+              },
+            ]}
             onPress={() => toggleCompare(property.id)}
           >
             <Ionicons
               name="git-compare-outline"
-              size={16}
-              color={isComparing ? COLORS.white : COLORS.textPrimary}
+              size={15}
+              color={isComparing ? '#FFFFFF' : colors.textPrimary}
             />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.circleBtn}
+            style={[
+              styles.circleBtn,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
             onPress={() => toggleWishlist(property.id)}
           >
             <Ionicons
               name={isSaved ? 'heart' : 'heart-outline'}
-              size={17}
-              color={isSaved ? COLORS.danger : COLORS.textPrimary}
+              size={16}
+              color={isSaved ? colors.danger : colors.textPrimary}
             />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Content */}
       <View style={styles.content}>
         <View style={styles.priceRow}>
-          <Text style={styles.price}>
+          <Text style={[styles.price, { color: colors.textPrimary }]}>
             {property.priceFormatted}
-            <Text style={styles.period}>{property.period}</Text>
+            <Text style={[styles.period, { color: colors.textSecondary }]}>
+              {property.period}
+            </Text>
           </Text>
           <View style={styles.ratingRow}>
-            <Ionicons name="star" size={13} color={COLORS.gold} />
-            <Text style={styles.ratingText}>{property.rating}</Text>
+            <Ionicons name="star" size={12.5} color={colors.gold} />
+            <Text style={[styles.ratingText, { color: colors.textSecondary }]}>
+              {property.rating}
+            </Text>
           </View>
         </View>
 
-        <Text style={styles.title} numberOfLines={1}>
+        <Text
+          style={[styles.title, { color: colors.textPrimary }]}
+          numberOfLines={1}
+        >
           {property.title}
         </Text>
 
-        <View style={styles.locationRow}>
-          <Ionicons name="location-outline" size={14} color={COLORS.textSecondary} />
-          <Text style={styles.location} numberOfLines={1}>
-            {property.location}
-          </Text>
-        </View>
+        <Text
+          style={[styles.location, { color: colors.textSecondary }]}
+          numberOfLines={1}
+        >
+          {property.location}
+        </Text>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         <View style={styles.specsRow}>
           {property.beds > 0 && (
-            <View style={styles.specItem}>
-              <Ionicons name="bed-outline" size={15} color={COLORS.primary} />
-              <Text style={styles.specLabel}>{property.beds} Beds</Text>
-            </View>
+            <Text style={[styles.specLabel, { color: colors.textSecondary }]}>
+              {property.beds} bd
+            </Text>
           )}
           {property.baths > 0 && (
-            <View style={styles.specItem}>
-              <Ionicons name="water-outline" size={15} color={COLORS.primary} />
-              <Text style={styles.specLabel}>{property.baths} Baths</Text>
-            </View>
-          )}
-          <View style={styles.specItem}>
-            <Ionicons name="resize-outline" size={15} color={COLORS.primary} />
-            <Text style={styles.specLabel}>
-              {property.sqft.toLocaleString()} sq ft
+            <Text style={[styles.specLabel, { color: colors.textSecondary }]}>
+              {property.baths} ba
             </Text>
-          </View>
+          )}
+          <Text style={[styles.specLabel, { color: colors.textSecondary }]}>
+            {property.sqft.toLocaleString()} sq ft
+          </Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -108,52 +128,48 @@ export default function PropertyCard({ property, onPress, compact = false }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.card,
     borderRadius: RADIUS.lg,
     marginBottom: SPACING.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    overflow: 'hidden',
     ...SHADOWS.subtle,
   },
   compactCard: {
-    width: 270,
+    width: 268,
     marginRight: SPACING.md,
     marginBottom: 4,
   },
   imageBox: {
-    height: 195,
+    height: 192,
     width: '100%',
     position: 'relative',
   },
   compactImageBox: {
-    height: 155,
+    height: 152,
   },
   image: {
     width: '100%',
     height: '100%',
-    borderTopLeftRadius: RADIUS.lg,
-    borderTopRightRadius: RADIUS.lg,
   },
-  categoryPill: {
+  categoryTag: {
     position: 'absolute',
-    top: 12,
-    left: 12,
-    backgroundColor: 'rgba(255,255,255,0.94)',
+    bottom: 10,
+    left: 10,
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: RADIUS.full,
+    paddingVertical: 4,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
   },
   categoryText: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '700',
-    color: COLORS.primary,
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
-    letterSpacing: 0.4,
   },
   topActions: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: 10,
+    right: 10,
     flexDirection: 'row',
     gap: 8,
   },
@@ -161,15 +177,12 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: RADIUS.full,
-    backgroundColor: 'rgba(255,255,255,0.94)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  compareActiveBtn: {
-    backgroundColor: COLORS.primary,
+    borderWidth: 1,
   },
   content: {
-    padding: SPACING.md,
+    padding: 14,
   },
   priceRow: {
     flexDirection: 'row',
@@ -179,62 +192,43 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 18,
-    fontWeight: '800',
-    color: COLORS.primary,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+    letterSpacing: -0.3,
   },
   period: {
     fontSize: 13,
-    fontWeight: '500',
-    color: COLORS.textSecondary,
+    fontWeight: '400',
   },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    backgroundColor: COLORS.surface,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: RADIUS.full,
+    gap: 4,
   },
   ratingText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontWeight: '600',
   },
   title: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    fontSize: 15.5,
+    fontWeight: '600',
+    marginBottom: 2,
   },
   location: {
     fontSize: 13,
-    color: COLORS.textSecondary,
-    flex: 1,
   },
   divider: {
     height: 1,
-    backgroundColor: COLORS.border,
-    marginVertical: 12,
+    marginVertical: 10,
   },
   specsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  specItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
+    gap: 12,
   },
   specLabel: {
     fontSize: 12.5,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontWeight: '500',
+    fontVariant: ['tabular-nums'],
   },
 });
