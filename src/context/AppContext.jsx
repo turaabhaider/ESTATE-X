@@ -1,9 +1,29 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useMemo } from 'react';
 import { CITIES, INITIAL_MESSAGES } from '../data/mockData';
+import { COLORS as LIGHT_PALETTE } from '../theme/theme';
+
+const DARK_PALETTE = {
+  background: '#0D1210',
+  surface: '#151C19',       // Obsidian warm-charcoal surface
+  surfaceAlt: '#1C2521',    // Elevated dark neutral
+  card: '#151C19',
+  primary: '#22A06B',       // Luminous emerald accent for dark surfaces
+  primaryLight: '#132A20',  // Deep emerald tint
+  accent: '#2AC784',
+  textPrimary: '#F3F6F4',
+  textSecondary: '#A8B3AE',
+  textMuted: '#6F7B75',
+  border: '#242E2A',
+  gold: '#D4A838',
+  danger: '#E04F5F',
+  white: '#FFFFFF',
+  black: '#000000',
+};
 
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedCity, setSelectedCity] = useState(CITIES[0]);
   const [wishlist, setWishlist] = useState(['prop-1', 'prop-2']);
   const [compareList, setCompareList] = useState(['prop-1', 'prop-3']);
@@ -16,6 +36,15 @@ export const AppProvider = ({ children }) => {
     maxPrice: 10000000,
     beds: 0,
   });
+
+  const colors = useMemo(
+    () => (isDarkMode ? DARK_PALETTE : LIGHT_PALETTE),
+    [isDarkMode]
+  );
+
+  const toggleTheme = () => {
+    setIsDarkMode((prev) => !prev);
+  };
 
   const toggleWishlist = (propertyId) => {
     setWishlist((prev) =>
@@ -39,7 +68,10 @@ export const AppProvider = ({ children }) => {
 
   const sendMessage = (agentName, propertyTitle, avatar, text) => {
     if (!text.trim()) return;
-    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const now = new Date().toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
     setChats((prev) => {
       const existingIndex = prev.findIndex((c) => c.agentName === agentName);
@@ -64,7 +96,9 @@ export const AppProvider = ({ children }) => {
           avatar,
           unread: 0,
           time: now,
-          messages: [{ id: Date.now().toString(), sender: 'user', text, time: now }],
+          messages: [
+            { id: Date.now().toString(), sender: 'user', text, time: now },
+          ],
         },
         ...prev,
       ];
@@ -81,6 +115,9 @@ export const AppProvider = ({ children }) => {
   return (
     <AppContext.Provider
       value={{
+        isDarkMode,
+        toggleTheme,
+        colors,
         selectedCity,
         setSelectedCity,
         wishlist,

@@ -5,15 +5,17 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
+  Switch,
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme/theme';
+import { SPACING, RADIUS, SHADOWS } from '../theme/theme';
 import { useApp } from '../context/AppContext';
 
 export default function ProfileScreen({ navigation }) {
-  const { wishlist, bookedTours, compareList } = useApp();
+  const { wishlist, bookedTours, compareList, isDarkMode, toggleTheme, colors } =
+    useApp();
 
   const menuItems = [
     {
@@ -43,13 +45,21 @@ export default function ProfileScreen({ navigation }) {
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
+      edges={['top']}
+    >
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         {/* Profile Header Card */}
-        <View style={styles.profileCard}>
+        <View
+          style={[
+            styles.profileCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
           <Image
             source={{
               uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
@@ -57,56 +67,99 @@ export default function ProfileScreen({ navigation }) {
             style={styles.avatar}
           />
           <View style={styles.userInfo}>
-            <View style={styles.tierPill}>
-              <Ionicons name="diamond-outline" size={12} color={COLORS.primary} />
-              <Text style={styles.tierText}>Private Client</Text>
+            <View
+              style={[styles.tierPill, { backgroundColor: colors.primaryLight }]}
+            >
+              <Ionicons name="diamond-outline" size={12} color={colors.primary} />
+              <Text style={[styles.tierText, { color: colors.primary }]}>
+                Private Client
+              </Text>
             </View>
-            <Text style={styles.userName}>Alex Morgan</Text>
-            <Text style={styles.userEmail}>alex.morgan@estatex.io</Text>
+            <Text style={[styles.userName, { color: colors.textPrimary }]}>
+              Alex Morgan
+            </Text>
+            <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
+              alex.morgan@estatex.io
+            </Text>
           </View>
         </View>
 
         {/* Stats Row */}
-        <View style={styles.statsRow}>
+        <View
+          style={[
+            styles.statsRow,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <View style={styles.statBox}>
-            <Text style={styles.statNum}>{wishlist.length}</Text>
-            <Text style={styles.statLabel}>Saved</Text>
+            <Text style={[styles.statNum, { color: colors.primary }]}>
+              {wishlist.length}
+            </Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+              Saved
+            </Text>
           </View>
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
           <View style={styles.statBox}>
-            <Text style={styles.statNum}>{bookedTours.length}</Text>
-            <Text style={styles.statLabel}>Viewings</Text>
+            <Text style={[styles.statNum, { color: colors.primary }]}>
+              {bookedTours.length}
+            </Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+              Viewings
+            </Text>
           </View>
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
           <View style={styles.statBox}>
-            <Text style={styles.statNum}>{compareList.length}</Text>
-            <Text style={styles.statLabel}>Comparing</Text>
+            <Text style={[styles.statNum, { color: colors.primary }]}>
+              {compareList.length}
+            </Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+              Comparing
+            </Text>
           </View>
         </View>
 
         {/* Scheduled Viewings */}
-        <Text style={styles.sectionTitle}>Scheduled Private Viewings</Text>
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          Scheduled Private Viewings
+        </Text>
         {bookedTours.length === 0 ? (
-          <View style={styles.emptyTourBox}>
+          <View
+            style={[
+              styles.emptyTourBox,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
             <Ionicons
               name="calendar-outline"
               size={22}
-              color={COLORS.textSecondary}
+              color={colors.textSecondary}
             />
-            <Text style={styles.emptyTourText}>
+            <Text style={[styles.emptyTourText, { color: colors.textSecondary }]}>
               No upcoming viewings yet. Open any property to book a tour.
             </Text>
           </View>
         ) : (
           bookedTours.map((tour) => (
-            <View key={tour.id} style={styles.tourCard}>
-              <View style={styles.tourBadge}>
-                <Ionicons name="calendar" size={18} color={COLORS.primary} />
+            <View
+              key={tour.id}
+              style={[
+                styles.tourCard,
+                { backgroundColor: colors.primaryLight },
+              ]}
+            >
+              <View
+                style={[styles.tourBadge, { backgroundColor: colors.card }]}
+              >
+                <Ionicons name="calendar" size={18} color={colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.tourTitle}>{tour.property.title}</Text>
-                <Text style={styles.tourMeta}>
-                  {tour.dateLabel} at {tour.timeLabel} • {tour.property.agent.name}
+                <Text style={[styles.tourTitle, { color: colors.textPrimary }]}>
+                  {tour.property.title}
+                </Text>
+                <Text style={[styles.tourMeta, { color: colors.primary }]}>
+                  {tour.dateLabel} at {tour.timeLabel} •{' '}
+                  {tour.property.agent.name}
                 </Text>
               </View>
             </View>
@@ -114,26 +167,67 @@ export default function ProfileScreen({ navigation }) {
         )}
 
         {/* Settings Menu */}
-        <Text style={styles.sectionTitle}>Account & Tools</Text>
-        <View style={styles.menuCard}>
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          Appearance & Account
+        </Text>
+        <View
+          style={[
+            styles.menuCard,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          {/* Obsidian-Emerald Dark Mode Toggle */}
+          <View style={[styles.menuRow, styles.menuBorder, { borderBottomColor: colors.border }]}>
+            <View style={[styles.menuIcon, { backgroundColor: colors.surface }]}>
+              <Ionicons
+                name={isDarkMode ? 'moon' : 'sunny-outline'}
+                size={19}
+                color={colors.primary}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>
+                Obsidian Dark Mode
+              </Text>
+              <Text style={[styles.menuSub, { color: colors.textSecondary }]}>
+                {isDarkMode ? 'Obsidian-Emerald active' : 'Crisp Light active'}
+              </Text>
+            </View>
+            <Switch
+              value={isDarkMode}
+              onValueChange={toggleTheme}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={colors.white}
+            />
+          </View>
+
           {menuItems.map((item, idx) => (
             <TouchableOpacity
               key={item.label}
               style={[
                 styles.menuRow,
-                idx < menuItems.length - 1 && styles.menuBorder,
+                idx < menuItems.length - 1 && [
+                  styles.menuBorder,
+                  { borderBottomColor: colors.border },
+                ],
               ]}
               onPress={item.onPress}
             >
-              <View style={styles.menuIcon}>
-                <Ionicons name={item.icon} size={19} color={COLORS.primary} />
+              <View style={[styles.menuIcon, { backgroundColor: colors.surface }]}>
+                <Ionicons name={item.icon} size={19} color={colors.primary} />
               </View>
-              <Text style={styles.menuLabel}>{item.label}</Text>
-              <Text style={styles.menuBadge}>{item.badge}</Text>
+              <Text
+                style={[styles.menuLabel, { flex: 1, color: colors.textPrimary }]}
+              >
+                {item.label}
+              </Text>
+              <Text style={[styles.menuBadge, { color: colors.primary }]}>
+                {item.badge}
+              </Text>
               <Ionicons
                 name="chevron-forward"
                 size={17}
-                color={COLORS.textMuted}
+                color={colors.textMuted}
               />
             </TouchableOpacity>
           ))}
@@ -146,7 +240,6 @@ export default function ProfileScreen({ navigation }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   scrollContent: {
     padding: SPACING.lg,
@@ -155,11 +248,9 @@ const styles = StyleSheet.create({
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
     padding: SPACING.md,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.border,
     marginBottom: SPACING.md,
   },
   avatar: {
@@ -176,7 +267,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     alignSelf: 'flex-start',
-    backgroundColor: COLORS.primaryLight,
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: RADIUS.full,
@@ -185,25 +275,20 @@ const styles = StyleSheet.create({
   tierText: {
     fontSize: 11,
     fontWeight: '700',
-    color: COLORS.primary,
   },
   userName: {
     fontSize: 20,
     fontWeight: '800',
-    color: COLORS.textPrimary,
   },
   userEmail: {
     fontSize: 13,
-    color: COLORS.textSecondary,
     marginTop: 1,
   },
   statsRow: {
     flexDirection: 'row',
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.lg,
     paddingVertical: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
     marginBottom: SPACING.lg,
     ...SHADOWS.subtle,
   },
@@ -214,44 +299,36 @@ const styles = StyleSheet.create({
   statNum: {
     fontSize: 20,
     fontWeight: '800',
-    color: COLORS.primary,
   },
   statLabel: {
     fontSize: 12.5,
-    color: COLORS.textSecondary,
     marginTop: 2,
   },
   statDivider: {
     width: 1,
-    backgroundColor: COLORS.border,
   },
   sectionTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginBottom: 10,
   },
   emptyTourBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: COLORS.surface,
     padding: 14,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
     marginBottom: SPACING.lg,
   },
   emptyTourText: {
     flex: 1,
     fontSize: 13,
-    color: COLORS.textSecondary,
     lineHeight: 18,
   },
   tourCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primaryLight,
     padding: 14,
     borderRadius: RADIUS.md,
     marginBottom: 12,
@@ -261,26 +338,21 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: RADIUS.full,
-    backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',
   },
   tourTitle: {
     fontSize: 14.5,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   tourMeta: {
     fontSize: 12.5,
-    color: COLORS.primary,
     fontWeight: '600',
     marginTop: 2,
   },
   menuCard: {
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: COLORS.border,
     ...SHADOWS.subtle,
   },
   menuRow: {
@@ -291,25 +363,24 @@ const styles = StyleSheet.create({
   },
   menuBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   menuIcon: {
     width: 36,
     height: 36,
     borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
   menuLabel: {
-    flex: 1,
     fontSize: 14.5,
     fontWeight: '600',
-    color: COLORS.textPrimary,
+  },
+  menuSub: {
+    fontSize: 12,
+    marginTop: 1,
   },
   menuBadge: {
     fontSize: 12.5,
     fontWeight: '600',
-    color: COLORS.primary,
   },
 });
