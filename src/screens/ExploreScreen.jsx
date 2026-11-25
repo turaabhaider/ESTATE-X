@@ -11,14 +11,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme/theme';
+import { SPACING, RADIUS, SHADOWS } from '../theme/theme';
 import { PROPERTIES, CATEGORIES } from '../data/mockData';
 import { useApp } from '../context/AppContext';
 import PropertyCard from '../components/PropertyCard';
 import FilterModal from '../components/FilterModal';
 
 export default function ExploreScreen({ navigation }) {
-  const { filters, setFilters } = useApp();
+  const { filters, setFilters, colors } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'map'
   const [filterVisible, setFilterVisible] = useState(false);
@@ -37,41 +37,55 @@ export default function ExploreScreen({ navigation }) {
   });
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      {/* Top Search & Toggle Header */}
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
+      edges={['top']}
+    >
+      {/* Top Search & List/Map Switch */}
       <View style={styles.header}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={18} color={COLORS.textSecondary} />
+        <View
+          style={[
+            styles.searchBar,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: colors.textPrimary }]}
             placeholder="Search neighborhood, address..."
-            placeholderTextColor={COLORS.textMuted}
+            placeholderTextColor={colors.textMuted}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           <TouchableOpacity onPress={() => setFilterVisible(true)}>
-            <Ionicons name="options" size={20} color={COLORS.primary} />
+            <Ionicons name="options-outline" size={19} color={colors.primary} />
           </TouchableOpacity>
         </View>
 
-        {/* List / Map Segmented Switch */}
-        <View style={styles.toggleWrap}>
+        <View
+          style={[
+            styles.toggleWrap,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
           <TouchableOpacity
             style={[
               styles.toggleBtn,
-              viewMode === 'list' && styles.toggleBtnActive,
+              viewMode === 'list' && { backgroundColor: colors.primary },
             ]}
             onPress={() => setViewMode('list')}
           >
             <Ionicons
-              name="list"
-              size={16}
-              color={viewMode === 'list' ? COLORS.white : COLORS.textPrimary}
+              name="list-outline"
+              size={15}
+              color={viewMode === 'list' ? '#FFFFFF' : colors.textPrimary}
             />
             <Text
               style={[
                 styles.toggleText,
-                viewMode === 'list' && styles.toggleTextActive,
+                {
+                  color: viewMode === 'list' ? '#FFFFFF' : colors.textPrimary,
+                },
               ]}
             >
               List
@@ -81,19 +95,21 @@ export default function ExploreScreen({ navigation }) {
           <TouchableOpacity
             style={[
               styles.toggleBtn,
-              viewMode === 'map' && styles.toggleBtnActive,
+              viewMode === 'map' && { backgroundColor: colors.primary },
             ]}
             onPress={() => setViewMode('map')}
           >
             <Ionicons
-              name="map"
-              size={16}
-              color={viewMode === 'map' ? COLORS.white : COLORS.textPrimary}
+              name="map-outline"
+              size={15}
+              color={viewMode === 'map' ? '#FFFFFF' : colors.textPrimary}
             />
             <Text
               style={[
                 styles.toggleText,
-                viewMode === 'map' && styles.toggleTextActive,
+                {
+                  color: viewMode === 'map' ? '#FFFFFF' : colors.textPrimary,
+                },
               ]}
             >
               Map
@@ -109,10 +125,22 @@ export default function ExploreScreen({ navigation }) {
           return (
             <TouchableOpacity
               key={cat.id}
-              style={[styles.chip, active && styles.chipActive]}
+              style={[
+                styles.chip,
+                {
+                  backgroundColor: active ? colors.primaryLight : colors.surface,
+                  borderColor: active ? colors.primary : colors.border,
+                },
+              ]}
               onPress={() => setFilters({ ...filters, category: cat.id })}
             >
-              <Text style={[styles.chipText, active && styles.chipTextActive]}>
+              <Text
+                style={[
+                  styles.chipText,
+                  { color: active ? colors.primary : colors.textSecondary },
+                  active && { fontWeight: '700' },
+                ]}
+              >
                 {cat.label}
               </Text>
             </TouchableOpacity>
@@ -120,7 +148,7 @@ export default function ExploreScreen({ navigation }) {
         })}
       </View>
 
-      {/* Main View: List OR Map */}
+      {/* List or Interactive Map */}
       {viewMode === 'list' ? (
         <FlatList
           data={filteredData}
@@ -128,9 +156,9 @@ export default function ExploreScreen({ navigation }) {
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
-            <Text style={styles.resultCount}>
+            <Text style={[styles.resultCount, { color: colors.textSecondary }]}>
               {filteredData.length} curated{' '}
-              {filteredData.length === 1 ? 'property' : 'properties'} available
+              {filteredData.length === 1 ? 'residence' : 'residences'}
             </Text>
           }
           renderItem={({ item }) => (
@@ -164,13 +192,18 @@ export default function ExploreScreen({ navigation }) {
                   <View
                     style={[
                       styles.pricePin,
-                      isSelected && styles.pricePinSelected,
+                      {
+                        backgroundColor: isSelected
+                          ? colors.primary
+                          : colors.card,
+                        borderColor: colors.primary,
+                      },
                     ]}
                   >
                     <Text
                       style={[
                         styles.pricePinText,
-                        isSelected && styles.pricePinTextSelected,
+                        { color: isSelected ? '#FFFFFF' : colors.primary },
                       ]}
                     >
                       {prop.priceFormatted}
@@ -181,11 +214,13 @@ export default function ExploreScreen({ navigation }) {
             })}
           </MapView>
 
-          {/* Floating Bottom Property Card on Map */}
           {selectedPin && (
             <TouchableOpacity
               activeOpacity={0.92}
-              style={styles.floatingCard}
+              style={[
+                styles.floatingCard,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
               onPress={() =>
                 navigation.navigate('PropertyDetails', {
                   property: selectedPin,
@@ -197,25 +232,33 @@ export default function ExploreScreen({ navigation }) {
                 style={styles.floatingImg}
               />
               <View style={styles.floatingInfo}>
-                <Text style={styles.floatingPrice}>
+                <Text style={[styles.floatingPrice, { color: colors.primary }]}>
                   {selectedPin.priceFormatted}
                   {selectedPin.period}
                 </Text>
-                <Text style={styles.floatingTitle} numberOfLines={1}>
+                <Text
+                  style={[styles.floatingTitle, { color: colors.textPrimary }]}
+                  numberOfLines={1}
+                >
                   {selectedPin.title}
                 </Text>
-                <Text style={styles.floatingLoc} numberOfLines={1}>
+                <Text
+                  style={[styles.floatingLoc, { color: colors.textSecondary }]}
+                  numberOfLines={1}
+                >
                   {selectedPin.location}
                 </Text>
-                <Text style={styles.floatingSpecs}>
-                  {selectedPin.beds > 0 ? `${selectedPin.beds} bd • ` : ''}
+                <Text
+                  style={[styles.floatingSpecs, { color: colors.textMuted }]}
+                >
+                  {selectedPin.beds > 0 ? `${selectedPin.beds} bd · ` : ''}
                   {selectedPin.sqft.toLocaleString()} sq ft
                 </Text>
               </View>
               <Ionicons
                 name="chevron-forward"
-                size={20}
-                color={COLORS.primary}
+                size={18}
+                color={colors.textSecondary}
               />
             </TouchableOpacity>
           )}
@@ -233,7 +276,6 @@ export default function ExploreScreen({ navigation }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
@@ -246,26 +288,21 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
     borderRadius: RADIUS.md,
     paddingHorizontal: 12,
     height: 46,
     borderWidth: 1,
-    borderColor: COLORS.border,
     gap: 8,
   },
   input: {
     flex: 1,
     fontSize: 14,
-    color: COLORS.textPrimary,
   },
   toggleWrap: {
     flexDirection: 'row',
-    backgroundColor: COLORS.surface,
     borderRadius: RADIUS.md,
     padding: 3,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   toggleBtn: {
     flexDirection: 'row',
@@ -275,16 +312,9 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: RADIUS.sm,
   },
-  toggleBtnActive: {
-    backgroundColor: COLORS.primary,
-  },
   toggleText: {
-    fontSize: 12.5,
+    fontSize: 12,
     fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  toggleTextActive: {
-    color: COLORS.white,
   },
   chipRow: {
     flexDirection: 'row',
@@ -295,32 +325,21 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: RADIUS.full,
-    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.sm,
     borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  chipActive: {
-    backgroundColor: COLORS.primaryLight,
-    borderColor: COLORS.primary,
   },
   chipText: {
     fontSize: 12.5,
     fontWeight: '600',
-    color: COLORS.textSecondary,
-  },
-  chipTextActive: {
-    color: COLORS.primary,
-    fontWeight: '700',
   },
   listContent: {
     paddingHorizontal: SPACING.lg,
-    paddingBottom: 110,
+    paddingBottom: 32,
   },
   resultCount: {
     fontSize: 13,
-    color: COLORS.textSecondary,
     fontWeight: '500',
+    fontVariant: ['tabular-nums'],
     marginBottom: 12,
   },
   mapContainer: {
@@ -330,41 +349,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pricePin: {
-    backgroundColor: COLORS.white,
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: RADIUS.full,
-    borderWidth: 1.5,
-    borderColor: COLORS.primary,
+    paddingVertical: 5,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
     ...SHADOWS.subtle,
   },
-  pricePinSelected: {
-    backgroundColor: COLORS.primary,
-  },
   pricePinText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: COLORS.primary,
-  },
-  pricePinTextSelected: {
-    color: COLORS.white,
+    fontSize: 11.5,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   floatingCard: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 20,
     left: SPACING.lg,
     right: SPACING.lg,
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.lg,
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    borderWidth: 1,
     ...SHADOWS.medium,
   },
   floatingImg: {
-    width: 78,
-    height: 78,
+    width: 76,
+    height: 76,
     borderRadius: RADIUS.md,
   },
   floatingInfo: {
@@ -372,24 +383,22 @@ const styles = StyleSheet.create({
   },
   floatingPrice: {
     fontSize: 15,
-    fontWeight: '800',
-    color: COLORS.primary,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   floatingTitle: {
     fontSize: 14.5,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontWeight: '600',
     marginTop: 2,
   },
   floatingLoc: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     marginTop: 1,
   },
   floatingSpecs: {
     fontSize: 11.5,
-    fontWeight: '600',
-    color: COLORS.textMuted,
+    fontWeight: '500',
+    fontVariant: ['tabular-nums'],
     marginTop: 4,
   },
 });

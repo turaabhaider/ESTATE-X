@@ -12,18 +12,20 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme/theme';
+import { SPACING, RADIUS, SHADOWS } from '../theme/theme';
 import {
   PROPERTIES,
   CATEGORIES,
   CURATED_COLLECTIONS,
 } from '../data/mockData';
+import { useApp } from '../context/AppContext';
 import HeaderBar from '../components/HeaderBar';
 import FeaturedBanner from '../components/FeaturedBanner';
 import PropertyCard from '../components/PropertyCard';
 import FilterModal from '../components/FilterModal';
 
 export default function HomeScreen({ navigation }) {
+  const { colors } = useApp();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchText, setSearchText] = useState('');
   const [filterVisible, setFilterVisible] = useState(false);
@@ -44,25 +46,36 @@ export default function HomeScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
+      edges={['top']}
+    >
       <HeaderBar onOpenCompare={() => navigation.navigate('Compare')} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Prominent Search + Filter Bar */}
+        {/* Architectural Search & Filter Bar */}
         <View style={styles.searchContainer}>
-          <View style={styles.searchBox}>
+          <View
+            style={[
+              styles.searchBox,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
+            ]}
+          >
             <Ionicons
               name="search-outline"
-              size={20}
-              color={COLORS.textSecondary}
+              size={18}
+              color={colors.textSecondary}
             />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: colors.textPrimary }]}
               placeholder="Search city, villa, penthouse..."
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={searchText}
               onChangeText={setSearchText}
             />
@@ -70,27 +83,36 @@ export default function HomeScreen({ navigation }) {
               <TouchableOpacity onPress={() => setSearchText('')}>
                 <Ionicons
                   name="close-circle"
-                  size={18}
-                  color={COLORS.textMuted}
+                  size={17}
+                  color={colors.textMuted}
                 />
               </TouchableOpacity>
             )}
           </View>
 
           <TouchableOpacity
-            style={styles.filterBtn}
+            style={[
+              styles.filterBtn,
+              {
+                backgroundColor: colors.primary,
+              },
+            ]}
             activeOpacity={0.85}
             onPress={() => setFilterVisible(true)}
           >
-            <Ionicons name="options-outline" size={21} color={COLORS.white} />
+            <Ionicons name="options-outline" size={19} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
 
-        {/* Featured Section */}
+        {/* Featured Estates */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Featured Estates</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            Featured Estates
+          </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Explore')}>
-            <Text style={styles.seeAll}>See All</Text>
+            <Text style={[styles.seeAll, { color: colors.primary }]}>
+              View All
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -111,16 +133,26 @@ export default function HomeScreen({ navigation }) {
               <TouchableOpacity
                 key={cat.id}
                 activeOpacity={0.8}
-                style={[styles.catPill, active && styles.catPillActive]}
+                style={[
+                  styles.catPill,
+                  {
+                    backgroundColor: active ? colors.primary : colors.surface,
+                    borderColor: active ? colors.primary : colors.border,
+                  },
+                ]}
                 onPress={() => setSelectedCategory(cat.id)}
               >
                 <Ionicons
                   name={cat.icon}
-                  size={16}
-                  color={active ? COLORS.white : COLORS.textSecondary}
+                  size={15}
+                  color={active ? '#FFFFFF' : colors.textSecondary}
                 />
                 <Text
-                  style={[styles.catLabel, active && styles.catLabelActive]}
+                  style={[
+                    styles.catLabel,
+                    { color: active ? '#FFFFFF' : colors.textSecondary },
+                    active && { fontWeight: '700' },
+                  ]}
                 >
                   {cat.label}
                 </Text>
@@ -129,21 +161,28 @@ export default function HomeScreen({ navigation }) {
           })}
         </ScrollView>
 
-        {/* Nearby / Filtered Listings */}
+        {/* Nearby / Filtered Residences */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
             {selectedCategory === 'all'
               ? 'Nearby Residences'
               : `${selectedCategory} Listings`}
           </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Explore')}>
-            <Text style={styles.seeAll}>Explore Map</Text>
+            <Text style={[styles.seeAll, { color: colors.primary }]}>
+              Map View
+            </Text>
           </TouchableOpacity>
         </View>
 
         {filteredListings.length === 0 ? (
-          <View style={styles.emptyBox}>
-            <Text style={styles.emptyText}>
+          <View
+            style={[
+              styles.emptyBox,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
               No properties match your current search.
             </Text>
           </View>
@@ -166,7 +205,9 @@ export default function HomeScreen({ navigation }) {
 
         {/* Curated Collections */}
         <View style={[styles.sectionHeader, { marginTop: SPACING.lg }]}>
-          <Text style={styles.sectionTitle}>Curated Collections</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            Curated Collections
+          </Text>
         </View>
 
         <ScrollView
@@ -178,7 +219,7 @@ export default function HomeScreen({ navigation }) {
             <TouchableOpacity
               key={col.id}
               activeOpacity={0.9}
-              style={styles.collectionCard}
+              style={[styles.collectionCard, { borderColor: colors.border }]}
               onPress={() => navigation.navigate('Explore')}
             >
               <ImageBackground
@@ -187,7 +228,7 @@ export default function HomeScreen({ navigation }) {
                 imageStyle={{ borderRadius: RADIUS.lg }}
               >
                 <LinearGradient
-                  colors={['transparent', 'rgba(15, 23, 20, 0.85)']}
+                  colors={['rgba(17,20,19,0.08)', 'rgba(17,20,19,0.82)']}
                   style={styles.collectionGrad}
                 >
                   <Text style={styles.collectionTitle}>{col.title}</Text>
@@ -210,10 +251,9 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   scrollContent: {
-    paddingBottom: 110,
+    paddingBottom: 32,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -226,24 +266,20 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
     borderRadius: RADIUS.md,
     paddingHorizontal: 14,
-    height: 50,
+    height: 48,
     borderWidth: 1,
-    borderColor: COLORS.border,
     gap: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14.5,
-    color: COLORS.textPrimary,
+    fontSize: 14,
   },
   filterBtn: {
-    width: 50,
-    height: 50,
+    width: 48,
+    height: 48,
     borderRadius: RADIUS.md,
-    backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
     ...SHADOWS.subtle,
@@ -256,43 +292,31 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     letterSpacing: -0.3,
   },
   seeAll: {
-    fontSize: 13.5,
+    fontSize: 13,
     fontWeight: '600',
-    color: COLORS.primary,
   },
   categoriesRow: {
     paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
-    gap: 10,
+    paddingVertical: SPACING.md,
+    gap: 8,
   },
   catPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: RADIUS.full,
-    backgroundColor: COLORS.surface,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  catPillActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
   },
   catLabel: {
-    fontSize: 13.5,
+    fontSize: 13,
     fontWeight: '600',
-    color: COLORS.textSecondary,
-  },
-  catLabelActive: {
-    color: COLORS.white,
   },
   horizontalCards: {
     paddingLeft: SPACING.lg,
@@ -301,22 +325,23 @@ const styles = StyleSheet.create({
   emptyBox: {
     marginHorizontal: SPACING.lg,
     padding: SPACING.lg,
-    backgroundColor: COLORS.surface,
     borderRadius: RADIUS.md,
+    borderWidth: 1,
     alignItems: 'center',
   },
   emptyText: {
-    color: COLORS.textSecondary,
     fontSize: 14,
   },
   collectionsRow: {
     paddingHorizontal: SPACING.lg,
-    gap: 14,
+    gap: 12,
   },
   collectionCard: {
-    width: 175,
-    height: 125,
+    width: 176,
+    height: 122,
     borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
     ...SHADOWS.subtle,
   },
   collectionImg: {
@@ -324,18 +349,20 @@ const styles = StyleSheet.create({
   },
   collectionGrad: {
     flex: 1,
-    borderRadius: RADIUS.lg,
     padding: 12,
     justifyContent: 'flex-end',
   },
   collectionTitle: {
-    color: COLORS.white,
-    fontSize: 14.5,
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '700',
+    letterSpacing: -0.2,
   },
   collectionCount: {
-    color: '#D1D5DB',
-    fontSize: 12,
+    color: '#D8DEDB',
+    fontSize: 11.5,
+    fontWeight: '500',
     marginTop: 2,
+    fontVariant: ['tabular-nums'],
   },
 });

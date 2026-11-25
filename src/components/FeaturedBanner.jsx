@@ -10,14 +10,14 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme/theme';
+import { SPACING, RADIUS, SHADOWS } from '../theme/theme';
 import { useApp } from '../context/AppContext';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = width * 0.82;
+const CARD_WIDTH = width * 0.84;
 
 export default function FeaturedBanner({ properties, onSelectProperty }) {
-  const { wishlist, toggleWishlist } = useApp();
+  const { wishlist, toggleWishlist, colors } = useApp();
 
   const renderItem = ({ item }) => {
     const isSaved = wishlist.includes(item.id);
@@ -26,7 +26,10 @@ export default function FeaturedBanner({ properties, onSelectProperty }) {
       <TouchableOpacity
         activeOpacity={0.92}
         onPress={() => onSelectProperty(item)}
-        style={styles.cardWrapper}
+        style={[
+          styles.cardWrapper,
+          { borderColor: colors.border },
+        ]}
       >
         <ImageBackground
           source={{ uri: item.images[0] }}
@@ -34,39 +37,46 @@ export default function FeaturedBanner({ properties, onSelectProperty }) {
           imageStyle={styles.imageStyle}
         >
           <LinearGradient
-            colors={['rgba(0,0,0,0.08)', 'rgba(15,23,20,0.82)']}
+            colors={['rgba(17,20,19,0.06)', 'rgba(17,20,19,0.82)']}
             style={styles.gradient}
           >
-            {/* Top Row: Badge & Favorite */}
+            {/* Top Row: Editorial Tag & Save Action */}
             <View style={styles.topRow}>
-              <View style={styles.badge}>
-                <Ionicons name="sparkles" size={12} color={COLORS.white} />
+              <View
+                style={[
+                  styles.badge,
+                  { backgroundColor: colors.primary },
+                ]}
+              >
                 <Text style={styles.badgeText}>{item.badge}</Text>
               </View>
 
               <TouchableOpacity
-                style={styles.favBtn}
+                style={[
+                  styles.favBtn,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
+                  },
+                ]}
                 onPress={() => toggleWishlist(item.id)}
               >
                 <Ionicons
                   name={isSaved ? 'heart' : 'heart-outline'}
-                  size={19}
-                  color={isSaved ? COLORS.danger : COLORS.white}
+                  size={17}
+                  color={isSaved ? colors.danger : colors.textPrimary}
                 />
               </TouchableOpacity>
             </View>
 
-            {/* Bottom Row: Info & Price */}
+            {/* Bottom Row: Property Title, Location, Price & Specs */}
             <View>
               <Text style={styles.title} numberOfLines={1}>
                 {item.title}
               </Text>
-              <View style={styles.locationRow}>
-                <Ionicons name="location-outline" size={14} color="#D1D5DB" />
-                <Text style={styles.location} numberOfLines={1}>
-                  {item.location}
-                </Text>
-              </View>
+              <Text style={styles.location} numberOfLines={1}>
+                {item.location}
+              </Text>
 
               <View style={styles.footerRow}>
                 <Text style={styles.price}>
@@ -74,15 +84,15 @@ export default function FeaturedBanner({ properties, onSelectProperty }) {
                   <Text style={styles.period}>{item.period}</Text>
                 </Text>
 
-                <View style={styles.specsPill}>
+                <View style={styles.specsRow}>
                   {item.beds > 0 && (
                     <Text style={styles.specText}>{item.beds} bd</Text>
                   )}
                   {item.baths > 0 && (
-                    <Text style={styles.specText}>• {item.baths} ba</Text>
+                    <Text style={styles.specText}>{item.baths} ba</Text>
                   )}
                   <Text style={styles.specText}>
-                    • {item.sqft.toLocaleString()} ft²
+                    {item.sqft.toLocaleString()} ft²
                   </Text>
                 </View>
               </View>
@@ -114,19 +124,20 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     width: CARD_WIDTH,
-    height: 230,
-    borderRadius: RADIUS.xl,
-    ...SHADOWS.medium,
+    height: 224,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
+    ...SHADOWS.subtle,
   },
   image: {
     flex: 1,
   },
   imageStyle: {
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.lg,
   },
   gradient: {
     flex: 1,
-    borderRadius: RADIUS.xl,
     padding: SPACING.md,
     justifyContent: 'space-between',
   },
@@ -136,43 +147,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: RADIUS.full,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: RADIUS.sm,
   },
   badgeText: {
-    color: COLORS.white,
-    fontSize: 12,
+    color: '#FFFFFF',
+    fontSize: 10.5,
     fontWeight: '700',
-    letterSpacing: 0.3,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
   },
   favBtn: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
     borderRadius: RADIUS.full,
-    backgroundColor: 'rgba(255,255,255,0.22)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
   },
   title: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: '700',
-    color: COLORS.white,
-    marginBottom: 4,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 10,
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
+    marginBottom: 2,
   },
   location: {
     fontSize: 13,
-    color: '#E5E7EB',
+    color: '#D8DEDB',
+    marginBottom: 10,
   },
   footerRow: {
     flexDirection: 'row',
@@ -180,27 +184,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   price: {
-    fontSize: 19,
-    fontWeight: '800',
-    color: COLORS.white,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    fontVariant: ['tabular-nums'],
+    letterSpacing: -0.3,
   },
   period: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#D1D5DB',
+    fontSize: 12.5,
+    fontWeight: '400',
+    color: '#D8DEDB',
   },
-  specsPill: {
+  specsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: RADIUS.full,
+    gap: 10,
   },
   specText: {
-    color: COLORS.white,
+    color: '#E6ECE9',
     fontSize: 12,
     fontWeight: '600',
+    fontVariant: ['tabular-nums'],
   },
 });

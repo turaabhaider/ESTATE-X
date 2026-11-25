@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS } from '../theme/theme';
+import { SPACING, RADIUS } from '../theme/theme';
 import { CATEGORIES } from '../data/mockData';
 import { useApp } from '../context/AppContext';
 
@@ -22,8 +22,14 @@ const PRICE_RANGES = [
 const BED_OPTIONS = [0, 1, 2, 3, 4, 5];
 
 export default function FilterModal({ visible, onClose }) {
-  const { filters, setFilters } = useApp();
+  const { filters, setFilters, colors } = useApp();
   const [localFilters, setLocalFilters] = useState(filters);
+
+  useEffect(() => {
+    if (visible) {
+      setLocalFilters(filters);
+    }
+  }, [visible, filters]);
 
   const handleApply = () => {
     setFilters(localFilters);
@@ -45,31 +51,55 @@ export default function FilterModal({ visible, onClose }) {
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={styles.sheet}>
-          {/* Header */}
+        <View
+          style={[
+            styles.sheet,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Refine Search</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close" size={22} color={COLORS.textPrimary} />
+            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+              Refine Search
+            </Text>
+            <TouchableOpacity
+              onPress={onClose}
+              style={[
+                styles.closeBtn,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+            >
+              <Ionicons name="close" size={20} color={colors.textPrimary} />
             </TouchableOpacity>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Property Type */}
-            <Text style={styles.sectionLabel}>Property Type</Text>
+            <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
+              Property Type
+            </Text>
             <View style={styles.chipWrap}>
               {CATEGORIES.map((cat) => {
                 const active = localFilters.category === cat.id;
                 return (
                   <TouchableOpacity
                     key={cat.id}
-                    style={[styles.chip, active && styles.chipActive]}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: active
+                          ? colors.primary
+                          : colors.surface,
+                        borderColor: active ? colors.primary : colors.border,
+                      },
+                    ]}
                     onPress={() =>
                       setLocalFilters({ ...localFilters, category: cat.id })
                     }
                   >
                     <Text
-                      style={[styles.chipText, active && styles.chipTextActive]}
+                      style={[
+                        styles.chipText,
+                        { color: active ? '#FFFFFF' : colors.textPrimary },
+                      ]}
                     >
                       {cat.label}
                     </Text>
@@ -78,8 +108,9 @@ export default function FilterModal({ visible, onClose }) {
               })}
             </View>
 
-            {/* Budget */}
-            <Text style={styles.sectionLabel}>Price Range</Text>
+            <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
+              Price Range
+            </Text>
             <View style={styles.chipWrap}>
               {PRICE_RANGES.map((range) => {
                 const active =
@@ -88,7 +119,15 @@ export default function FilterModal({ visible, onClose }) {
                 return (
                   <TouchableOpacity
                     key={range.label}
-                    style={[styles.chip, active && styles.chipActive]}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: active
+                          ? colors.primary
+                          : colors.surface,
+                        borderColor: active ? colors.primary : colors.border,
+                      },
+                    ]}
                     onPress={() =>
                       setLocalFilters({
                         ...localFilters,
@@ -98,7 +137,10 @@ export default function FilterModal({ visible, onClose }) {
                     }
                   >
                     <Text
-                      style={[styles.chipText, active && styles.chipTextActive]}
+                      style={[
+                        styles.chipText,
+                        { color: active ? '#FFFFFF' : colors.textPrimary },
+                      ]}
                     >
                       {range.label}
                     </Text>
@@ -107,21 +149,33 @@ export default function FilterModal({ visible, onClose }) {
               })}
             </View>
 
-            {/* Bedrooms */}
-            <Text style={styles.sectionLabel}>Minimum Bedrooms</Text>
+            <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
+              Minimum Bedrooms
+            </Text>
             <View style={styles.bedRow}>
               {BED_OPTIONS.map((num) => {
                 const active = localFilters.beds === num;
                 return (
                   <TouchableOpacity
                     key={num}
-                    style={[styles.bedPill, active && styles.chipActive]}
+                    style={[
+                      styles.bedPill,
+                      {
+                        backgroundColor: active
+                          ? colors.primary
+                          : colors.surface,
+                        borderColor: active ? colors.primary : colors.border,
+                      },
+                    ]}
                     onPress={() =>
                       setLocalFilters({ ...localFilters, beds: num })
                     }
                   >
                     <Text
-                      style={[styles.chipText, active && styles.chipTextActive]}
+                      style={[
+                        styles.chipText,
+                        { color: active ? '#FFFFFF' : colors.textPrimary },
+                      ]}
                     >
                       {num === 0 ? 'Any' : `${num}+`}
                     </Text>
@@ -131,12 +185,22 @@ export default function FilterModal({ visible, onClose }) {
             </View>
           </ScrollView>
 
-          {/* Footer Buttons */}
-          <View style={styles.footer}>
-            <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
-              <Text style={styles.resetText}>Reset</Text>
+          <View style={[styles.footer, { borderTopColor: colors.border }]}>
+            <TouchableOpacity
+              style={[
+                styles.resetBtn,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+              onPress={handleReset}
+            >
+              <Text style={[styles.resetText, { color: colors.textPrimary }]}>
+                Reset
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.applyBtn} onPress={handleApply}>
+            <TouchableOpacity
+              style={[styles.applyBtn, { backgroundColor: colors.primary }]}
+              onPress={handleApply}
+            >
               <Text style={styles.applyText}>Show Properties</Text>
             </TouchableOpacity>
           </View>
@@ -149,15 +213,15 @@ export default function FilterModal({ visible, onClose }) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(20, 23, 26, 0.45)',
+    backgroundColor: 'rgba(17, 20, 19, 0.45)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: COLORS.white,
     borderTopLeftRadius: RADIUS.xl,
     borderTopRightRadius: RADIUS.xl,
     padding: SPACING.lg,
     maxHeight: '80%',
+    borderTopWidth: 1,
   },
   header: {
     flexDirection: 'row',
@@ -166,49 +230,39 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    letterSpacing: -0.3,
   },
   closeBtn: {
     width: 36,
     height: 36,
     borderRadius: RADIUS.full,
-    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
   },
   sectionLabel: {
-    fontSize: 15,
+    fontSize: 14.5,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginTop: SPACING.md,
     marginBottom: SPACING.sm,
   },
   chipWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
   chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: RADIUS.full,
-    backgroundColor: COLORS.surface,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  chipActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
   },
   chipText: {
-    fontSize: 13.5,
+    fontSize: 13,
     fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  chipTextActive: {
-    color: COLORS.white,
+    fontVariant: ['tabular-nums'],
   },
   bedRow: {
     flexDirection: 'row',
@@ -218,42 +272,37 @@ const styles = StyleSheet.create({
   },
   bedPill: {
     flex: 1,
-    paddingVertical: 11,
+    paddingVertical: 10,
     borderRadius: RADIUS.md,
-    backgroundColor: COLORS.surface,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   footer: {
     flexDirection: 'row',
     gap: 12,
     paddingTop: SPACING.md,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
   },
   resetBtn: {
     flex: 1,
-    paddingVertical: 15,
+    paddingVertical: 14,
     borderRadius: RADIUS.md,
-    backgroundColor: COLORS.surface,
     alignItems: 'center',
+    borderWidth: 1,
   },
   resetText: {
-    fontSize: 15,
+    fontSize: 14.5,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   applyBtn: {
     flex: 2,
-    paddingVertical: 15,
+    paddingVertical: 14,
     borderRadius: RADIUS.md,
-    backgroundColor: COLORS.primary,
     alignItems: 'center',
   },
   applyText: {
-    fontSize: 15,
+    color: '#FFFFFF',
+    fontSize: 14.5,
     fontWeight: '700',
-    color: COLORS.white,
   },
 });
