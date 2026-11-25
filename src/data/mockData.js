@@ -1,6 +1,6 @@
 export const CITIES = [
-  'Beverly Hills, CA',
   'Manhattan, NY',
+  'Beverly Hills, CA',
   'Miami Beach, FL',
   'Austin, TX',
   'Seattle, WA',
@@ -56,7 +56,8 @@ export const PROPERTIES = [
       phone: '3105550194',
       rating: 4.99,
       sales: '142 Sold',
-      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+      avatar:
+        'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
     },
   },
   {
@@ -98,7 +99,8 @@ export const PROPERTIES = [
       phone: '2125550148',
       rating: 4.95,
       sales: '98 Leased',
-      avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80',
+      avatar:
+        'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80',
     },
   },
   {
@@ -139,7 +141,8 @@ export const PROPERTIES = [
       phone: '3105550194',
       rating: 4.99,
       sales: '142 Sold',
-      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+      avatar:
+        'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
     },
   },
   {
@@ -180,7 +183,8 @@ export const PROPERTIES = [
       phone: '3055550177',
       rating: 4.97,
       sales: '$180M Volume',
-      avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80',
+      avatar:
+        'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80',
     },
   },
   {
@@ -221,7 +225,50 @@ export const PROPERTIES = [
       phone: '5125550162',
       rating: 4.94,
       sales: '64 Parcels',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+      avatar:
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+    },
+  },
+  {
+    id: 'prop-6',
+    title: 'Soho Limestone Courtyard Residence',
+    category: 'Buy',
+    badge: 'Exclusive',
+    price: 7450000,
+    priceFormatted: '$7,450,000',
+    period: '',
+    location: 'Manhattan, NY',
+    address: '118 Mercer St, Apt 4A, New York, NY 10012',
+    beds: 4,
+    baths: 5,
+    sqft: 4820,
+    rating: 4.98,
+    reviews: 21,
+    featured: true,
+    nearby: true,
+    collection: 'Skyline Penthouses',
+    coords: { latitude: 40.7248, longitude: -73.9967 },
+    images: [
+      'https://images.unsplash.com/photo-1600607687644-c7171b42498b?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=1200&q=80',
+    ],
+    amenities: [
+      { icon: 'business-outline', label: 'Keyed Lift' },
+      { icon: 'flame-outline', label: 'Wood Fireplace' },
+      { icon: 'wine-outline', label: 'Tasting Room' },
+      { icon: 'shield-checkmark-outline', label: 'Doorman' },
+    ],
+    description:
+      'Set in a cast-iron and limestone landmark in SoHo, this full-floor residence pairs historic proportions with bespoke honed stone baths and quiet courtyard exposures.',
+    agent: {
+      name: 'Marcus Sterling',
+      role: 'Director of Leasing',
+      agency: 'EstateX Manhattan',
+      phone: '2125550148',
+      rating: 4.95,
+      sales: '98 Leased',
+      avatar:
+        'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80',
     },
   },
 ];
@@ -231,19 +278,43 @@ export const CURATED_COLLECTIONS = [
     id: 'col-1',
     title: 'Architectural Icons',
     count: '14 Homes',
-    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
+    image:
+      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'col-2',
     title: 'Skyline Penthouses',
     count: '9 Residences',
-    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
+    image:
+      'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'col-3',
     title: 'Waterfront & Acreage',
     count: '11 Estates',
-    image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80',
+    image:
+      'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80',
+  },
+];
+
+export const MARKET_INSIGHTS = [
+  {
+    id: 'ins-1',
+    metric: '+6.4%',
+    label: 'Prime Median YoY',
+    sub: 'Manhattan & Beverly Hills',
+  },
+  {
+    id: 'ins-2',
+    metric: '19 Days',
+    label: 'Avg. Time on Market',
+    sub: 'Architectural & turnkey homes',
+  },
+  {
+    id: 'ins-3',
+    metric: '$1,840',
+    label: 'Median Price / Sq Ft',
+    sub: 'Curated luxury portfolio',
   },
 ];
 
@@ -252,7 +323,8 @@ export const INITIAL_MESSAGES = [
     id: 'chat-1',
     agentName: 'Elena Vance',
     propertyTitle: 'The Glass Pavilion Villa',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+    avatar:
+      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
     unread: 1,
     time: '10:24 AM',
     messages: [
@@ -268,7 +340,8 @@ export const INITIAL_MESSAGES = [
     id: 'chat-2',
     agentName: 'Marcus Sterling',
     propertyTitle: 'Emerald Terrace Penthouse',
-    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80',
+    avatar:
+      'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80',
     unread: 0,
     time: 'Yesterday',
     messages: [

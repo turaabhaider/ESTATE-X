@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import {
   PROPERTIES,
   CATEGORIES,
   CURATED_COLLECTIONS,
+  MARKET_INSIGHTS,
 } from '../data/mockData';
 import { useApp } from '../context/AppContext';
 import HeaderBar from '../components/HeaderBar';
@@ -25,21 +26,34 @@ import PropertyCard from '../components/PropertyCard';
 import FilterModal from '../components/FilterModal';
 
 export default function HomeScreen({ navigation }) {
-  const { colors } = useApp();
+  const { colors, selectedCity } = useApp();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchText, setSearchText] = useState('');
   const [filterVisible, setFilterVisible] = useState(false);
 
-  const featuredProperties = PROPERTIES.filter((p) => p.featured);
+  const featuredProperties = useMemo(
+    () => PROPERTIES.filter((p) => p.featured),
+    []
+  );
 
-  const filteredListings = PROPERTIES.filter((item) => {
-    const matchesCategory =
-      selectedCategory === 'all' || item.category === selectedCategory;
-    const matchesSearch =
-      item.title.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.location.toLowerCase().includes(searchText.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredListings = useMemo(() => {
+    return PROPERTIES.filter((item) => {
+      const matchesCategory =
+        selectedCategory === 'all' || item.category === selectedCategory;
+      const matchesSearch =
+        item.title.toLowerCase().includes(searchText.toLowerCase()) ||
+        item.location.toLowerCase().includes(searchText.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [selectedCategory, searchText]);
+
+  // Avoid showing the exact same lead image as the first Featured card at index 0 of Nearby
+  const nearbyCarouselData = useMemo(() => {
+    if (selectedCategory === 'all' && !searchText.trim()) {
+      return filteredListings.filter((item) => item.id !== 'prop-1');
+    }
+    return filteredListings;
+  }, [filteredListings, selectedCategory, searchText]);
 
   const openDetails = (property) => {
     navigation.navigate('PropertyDetails', { property });
@@ -56,7 +70,17 @@ export default function HomeScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Architectural Search & Filter Bar */}
+        {/* Editorial Intro Line */}
+        <View style={styles.introBlock}>
+          <Text style={[styles.introTitle, { color: colors.textPrimary }]}>
+            Architectural homes & private listings
+          </Text>
+          <Text style={[styles.introSub, { color: colors.textSecondary }]}>
+            Handpicked properties currently active around {selectedCity}
+          </Text>
+        </View>
+
+        {/* Search & Filter Bar */}
         <View style={styles.searchContainer}>
           <View
             style={[
@@ -74,7 +98,7 @@ export default function HomeScreen({ navigation }) {
             />
             <TextInput
               style={[styles.searchInput, { color: colors.textPrimary }]}
-              placeholder="Search city, villa, penthouse..."
+              placeholder="Search neighborhood, residence, city..."
               placeholderTextColor={colors.textMuted}
               value={searchText}
               onChangeText={setSearchText}
@@ -93,9 +117,7 @@ export default function HomeScreen({ navigation }) {
           <TouchableOpacity
             style={[
               styles.filterBtn,
-              {
-                backgroundColor: colors.primary,
-              },
+              { backgroundColor: colors.primary },
             ]}
             activeOpacity={0.85}
             onPress={() => setFilterVisible(true)}
@@ -175,7 +197,7 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {filteredListings.length === 0 ? (
+        {nearbyCarouselData.length === 0 ? (
           <View
             style={[
               styles.emptyBox,
@@ -188,7 +210,7 @@ export default function HomeScreen({ navigation }) {
           </View>
         ) : (
           <FlatList
-            data={filteredListings}
+            data={nearbyCarouselData}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.horizontalCards}
@@ -203,11 +225,52 @@ export default function HomeScreen({ navigation }) {
           />
         )}
 
+        {/* Market Snapshot Strip */}
+        <View style={[styles.sectionHeader, { marginTop: SPACING.lg }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            Market Pulse
+          </Text>
+          <Text style={[styles.sectionMeta, { color: colors.textMuted }]}>
+            Q4 Report
+          </Text>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.insightsRow}
+        >
+          {MARKET_INSIGHTS.map((item) => (
+            <View
+              key={item.id}
+              style={[
+                styles.insightCard,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+            >
+              <Text style={[styles.insightMetric, { color: colors.primary }]}>
+                {item.metric}
+              </Text>
+              <Text style={[styles.insightLabel, { color: colors.textPrimary }]}>
+                {item.label}
+              </Text>
+              <Text style={[styles.insightSub, { color: colors.textSecondary }]}>
+                {item.sub}
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
+
         {/* Curated Collections */}
         <View style={[styles.sectionHeader, { marginTop: SPACING.lg }]}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
             Curated Collections
           </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Explore')}>
+            <Text style={[styles.seeAll, { color: colors.primary }]}>
+              Explore
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <ScrollView
@@ -228,7 +291,7 @@ export default function HomeScreen({ navigation }) {
                 imageStyle={{ borderRadius: RADIUS.lg }}
               >
                 <LinearGradient
-                  colors={['rgba(17,20,19,0.08)', 'rgba(17,20,19,0.82)']}
+                  colors={['rgba(17,20,19,0.08)', 'rgba(17,20,19,0.84)']}
                   style={styles.collectionGrad}
                 >
                   <Text style={styles.collectionTitle}>{col.title}</Text>
@@ -238,6 +301,95 @@ export default function HomeScreen({ navigation }) {
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        {/* Private Concierge Advisory Card */}
+        <View
+          style={[
+            styles.conciergeCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <View style={styles.conciergeTop}>
+            <View
+              style={[
+                styles.conciergeIconBox,
+                { backgroundColor: colors.primaryLight },
+              ]}
+            >
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={20}
+                color={colors.primary}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text
+                style={[styles.conciergeTitle, { color: colors.textPrimary }]}
+              >
+                EstateX Private Advisory
+              </Text>
+              <Text
+                style={[styles.conciergeDesc, { color: colors.textSecondary }]}
+              >
+                Access off-market residences, architectural dossiers, and private
+                viewing appointments with dedicated senior advisors.
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.conciergeActions}>
+            <TouchableOpacity
+              style={[
+                styles.conciergePrimaryBtn,
+                { backgroundColor: colors.primary },
+              ]}
+              activeOpacity={0.85}
+              onPress={() =>
+                navigation.navigate('MainTabs', { screen: 'Messages' })
+              }
+            >
+              <Text style={styles.conciergePrimaryText}>Message Advisor</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.conciergeSecondaryBtn,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+              activeOpacity={0.85}
+              onPress={() => navigation.navigate('Compare')}
+            >
+              <Text
+                style={[
+                  styles.conciergeSecondaryText,
+                  { color: colors.textPrimary },
+                ]}
+              >
+                Compare Listings
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Full Showcase Listings */}
+        <View style={[styles.sectionHeader, { marginTop: SPACING.md }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            Latest Portfolio Additions
+          </Text>
+          <Text style={[styles.sectionMeta, { color: colors.textMuted }]}>
+            {filteredListings.length} homes
+          </Text>
+        </View>
+
+        <View style={styles.verticalList}>
+          {filteredListings.map((item) => (
+            <PropertyCard
+              key={`feed-${item.id}`}
+              property={item}
+              onPress={() => openDetails(item)}
+            />
+          ))}
+        </View>
       </ScrollView>
 
       <FilterModal
@@ -253,7 +405,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 32,
+    paddingBottom: 40,
+  },
+  introBlock: {
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+  },
+  introTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+  },
+  introSub: {
+    fontSize: 13,
+    marginTop: 2,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -296,6 +461,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: -0.3,
   },
+  sectionMeta: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
+  },
   seeAll: {
     fontSize: 13,
     fontWeight: '600',
@@ -332,6 +502,31 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
   },
+  insightsRow: {
+    paddingHorizontal: SPACING.lg,
+    gap: 12,
+  },
+  insightCard: {
+    width: 164,
+    padding: 14,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+  },
+  insightMetric: {
+    fontSize: 20,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+    letterSpacing: -0.3,
+  },
+  insightLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  insightSub: {
+    fontSize: 11.5,
+    marginTop: 2,
+  },
   collectionsRow: {
     paddingHorizontal: SPACING.lg,
     gap: 12,
@@ -364,5 +559,64 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 2,
     fontVariant: ['tabular-nums'],
+  },
+  conciergeCard: {
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
+    padding: SPACING.md,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+  },
+  conciergeTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 14,
+  },
+  conciergeIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: RADIUS.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  conciergeTitle: {
+    fontSize: 15.5,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  conciergeDesc: {
+    fontSize: 12.5,
+    lineHeight: 18,
+    marginTop: 3,
+  },
+  conciergeActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  conciergePrimaryBtn: {
+    flex: 1,
+    paddingVertical: 11,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+  },
+  conciergePrimaryText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  conciergeSecondaryBtn: {
+    flex: 1,
+    paddingVertical: 11,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  conciergeSecondaryText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  verticalList: {
+    paddingHorizontal: SPACING.lg,
   },
 });
