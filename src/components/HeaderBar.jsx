@@ -8,50 +8,76 @@ import {
   FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme/theme';
+import { SPACING, RADIUS, SHADOWS } from '../theme/theme';
 import { CITIES } from '../data/mockData';
 import { useApp } from '../context/AppContext';
 
 export default function HeaderBar({ onOpenCompare }) {
-  const { selectedCity, setSelectedCity, compareList } = useApp();
+  const { selectedCity, setSelectedCity, compareList, colors } = useApp();
   const [cityModalVisible, setCityModalVisible] = useState(false);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View>
-        <Text style={styles.greeting}>Good Morning, Alex</Text>
+        <Text style={[styles.brandEyebrow, { color: colors.primary }]}>
+          ESTATEX PRIVATE
+        </Text>
         <TouchableOpacity
           style={styles.locationRow}
           activeOpacity={0.75}
           onPress={() => setCityModalVisible(true)}
         >
-          <Ionicons name="location" size={16} color={COLORS.primary} />
-          <Text style={styles.cityText}>{selectedCity}</Text>
-          <Ionicons name="chevron-down" size={15} color={COLORS.textSecondary} />
+          <Text style={[styles.cityText, { color: colors.textPrimary }]}>
+            {selectedCity}
+          </Text>
+          <Ionicons
+            name="chevron-down"
+            size={16}
+            color={colors.textSecondary}
+          />
         </TouchableOpacity>
       </View>
 
       <View style={styles.actionsRow}>
         {compareList.length > 0 && (
           <TouchableOpacity
-            style={styles.iconBtn}
+            style={[
+              styles.iconBtn,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
+            ]}
             activeOpacity={0.8}
             onPress={onOpenCompare}
           >
-            <Ionicons name="git-compare-outline" size={20} color={COLORS.primary} />
-            <View style={styles.badge}>
+            <Ionicons
+              name="git-compare-outline"
+              size={19}
+              color={colors.primary}
+            />
+            <View style={[styles.badge, { backgroundColor: colors.primary }]}>
               <Text style={styles.badgeText}>{compareList.length}</Text>
             </View>
           </TouchableOpacity>
         )}
 
-        <TouchableOpacity style={styles.iconBtn} activeOpacity={0.8}>
-          <Ionicons name="notifications-outline" size={21} color={COLORS.textPrimary} />
-          <View style={styles.notifDot} />
+        <TouchableOpacity
+          style={[
+            styles.iconBtn,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="notifications-outline"
+            size={20}
+            color={colors.textPrimary}
+          />
+          <View style={[styles.notifDot, { backgroundColor: colors.primary }]} />
         </TouchableOpacity>
       </View>
 
-      {/* City Selector Modal */}
       <Modal
         visible={cityModalVisible}
         transparent
@@ -63,8 +89,15 @@ export default function HeaderBar({ onOpenCompare }) {
           activeOpacity={1}
           onPress={() => setCityModalVisible(false)}
         >
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Select Market</Text>
+          <View
+            style={[
+              styles.modalCard,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+              Select Market
+            </Text>
             <FlatList
               data={CITIES}
               keyExtractor={(item) => item}
@@ -72,7 +105,10 @@ export default function HeaderBar({ onOpenCompare }) {
                 const active = item === selectedCity;
                 return (
                   <TouchableOpacity
-                    style={[styles.cityOption, active && styles.cityOptionActive]}
+                    style={[
+                      styles.cityOption,
+                      active && { backgroundColor: colors.primaryLight },
+                    ]}
                     onPress={() => {
                       setSelectedCity(item);
                       setCityModalVisible(false);
@@ -81,13 +117,18 @@ export default function HeaderBar({ onOpenCompare }) {
                     <Text
                       style={[
                         styles.cityOptionText,
-                        active && styles.cityOptionTextActive,
+                        { color: colors.textPrimary },
+                        active && { color: colors.primary, fontWeight: '700' },
                       ]}
                     >
                       {item}
                     </Text>
                     {active && (
-                      <Ionicons name="checkmark-circle" size={20} color={COLORS.primary} />
+                      <Ionicons
+                        name="checkmark"
+                        size={18}
+                        color={colors.primary}
+                      />
                     )}
                   </TouchableOpacity>
                 );
@@ -108,54 +149,49 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.sm,
     paddingBottom: SPACING.md,
-    backgroundColor: COLORS.background,
   },
-  greeting: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
+  brandEyebrow: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    letterSpacing: 1.4,
     marginBottom: 2,
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
   },
   cityText: {
-    fontSize: 17,
+    fontSize: 20,
     fontWeight: '700',
-    color: COLORS.textPrimary,
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
   },
   actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
+    gap: 10,
   },
   iconBtn: {
-    width: 42,
-    height: 42,
+    width: 40,
+    height: 40,
     borderRadius: RADIUS.full,
-    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   badge: {
     position: 'absolute',
     top: -3,
     right: -3,
-    backgroundColor: COLORS.primary,
     borderRadius: RADIUS.full,
-    minWidth: 18,
-    height: 18,
+    minWidth: 17,
+    height: 17,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 4,
   },
   badgeText: {
-    color: COLORS.white,
+    color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '700',
   },
@@ -163,50 +199,38 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     right: 11,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.accent,
-    borderWidth: 1.5,
-    borderColor: COLORS.surface,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(20, 23, 26, 0.45)',
+    backgroundColor: 'rgba(17, 20, 19, 0.4)',
     justifyContent: 'center',
     padding: SPACING.lg,
   },
   modalCard: {
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.lg,
     padding: SPACING.lg,
+    borderWidth: 1,
     ...SHADOWS.medium,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginBottom: SPACING.md,
   },
   cityOption: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 13,
     paddingHorizontal: 12,
     borderRadius: RADIUS.md,
     marginBottom: 4,
   },
-  cityOptionActive: {
-    backgroundColor: COLORS.primaryLight,
-  },
   cityOptionText: {
     fontSize: 15,
-    color: COLORS.textPrimary,
     fontWeight: '500',
-  },
-  cityOptionTextActive: {
-    color: COLORS.primary,
-    fontWeight: '700',
   },
 });
