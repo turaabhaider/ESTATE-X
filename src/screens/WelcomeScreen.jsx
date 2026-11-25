@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -15,11 +15,15 @@ import { useApp } from '../context/AppContext';
 
 const { height } = Dimensions.get('window');
 
-const HERO_IMAGE =
-  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1400&q=85';
+const PRIMARY_HERO_IMAGE =
+  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80';
+
+const FALLBACK_HERO_IMAGE =
+  'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80';
 
 export default function WelcomeScreen({ navigation }) {
   const { colors } = useApp();
+  const [heroUri, setHeroUri] = useState(PRIMARY_HERO_IMAGE);
 
   const handleGetStarted = () => {
     navigation.replace('MainTabs');
@@ -28,13 +32,18 @@ export default function WelcomeScreen({ navigation }) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ImageBackground
-        source={{ uri: HERO_IMAGE }}
+        source={{ uri: heroUri }}
+        onError={() => {
+          if (heroUri !== FALLBACK_HERO_IMAGE) {
+            setHeroUri(FALLBACK_HERO_IMAGE);
+          }
+        }}
         style={styles.backgroundImage}
         resizeMode="cover"
       >
         <LinearGradient
           colors={[
-            'rgba(17, 20, 19, 0.42)',
+            'rgba(17, 20, 19, 0.45)',
             'rgba(17, 20, 19, 0.25)',
             'rgba(13, 18, 16, 0.92)',
           ]}
