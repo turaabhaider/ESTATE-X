@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,8 @@ import { useApp } from '../context/AppContext';
 const { width } = Dimensions.get('window');
 const TOUR_DATES = ['Tomorrow', 'Sat, Nov 28', 'Sun, Nov 29', 'Mon, Nov 30'];
 const TOUR_TIMES = ['10:00 AM', '1:30 PM', '4:00 PM', '6:00 PM'];
+const DOWN_PAYMENT_OPTIONS = [10, 20, 30];
+const TERM_YEARS_OPTIONS = [15, 20, 30];
 
 export default function PropertyDetailsScreen({ route, navigation }) {
   const { property } = route.params;
@@ -36,8 +38,40 @@ export default function PropertyDetailsScreen({ route, navigation }) {
   const [selectedDate, setSelectedDate] = useState(TOUR_DATES[0]);
   const [selectedTime, setSelectedTime] = useState(TOUR_TIMES[2]);
 
+  // Mortgage Calculator State
+  const [downPct, setDownPct] = useState(20);
+  const [loanYears, setLoanYears] = useState(30);
+  const [interestRate, setInterestRate] = useState(6.25);
+
   const isSaved = wishlist.includes(property.id);
   const isComparing = compareList.includes(property.id);
+
+  // Normalize monthly figure when viewing a rental listing so calculator stays meaningful
+  const basePrice =
+    property.category === 'Rent' ? property.price * 12 : property.price;
+
+  const mortgageStats = useMemo(() => {
+    const downPayment = Math.round((basePrice * downPct) / 100);
+    const principal = Math.max(basePrice - downPayment, 0);
+    const monthlyRate = interestRate / 100 / 12;
+    const totalPayments = loanYears * 12;
+
+    let monthlyPayment = 0;
+    if (principal > 0 && totalPayments > 0) {
+      if (monthlyRate === 0) {
+        monthlyPayment = principal / totalPayments;
+      } else {
+        const factor = Math.pow(1 + monthlyRate, totalPayments);
+        monthlyPayment = (principal * (monthlyRate * factor)) / (factor - 1);
+      }
+    }
+
+    return {
+      downPayment,
+      principal,
+      monthlyPayment: Math.round(monthlyPayment),
+    };
+  }, [basePrice, downPct, loanYears, interestRate]);
 
   const handleScroll = (event) => {
     const index = Math.round(event.nativeEvent.contentOffset.x / width);
@@ -61,6 +95,13 @@ export default function PropertyDetailsScreen({ route, navigation }) {
       `Hi ${property.agent.name}, I'm interested in ${property.title} (${property.priceFormatted}).`
     );
     navigation.navigate('MainTabs', { screen: 'Messages' });
+  };
+
+  const adjustRate = (delta) => {
+    setInterestRate((prev) => {
+      const next = Math.min(15, Math.max(1, Number((prev + delta).toFixed(2))));
+      return next;
+    });
   };
 
   return (
@@ -191,6 +232,124 @@ export default function PropertyDetailsScreen({ route, navigation }) {
                 <Text style={styles.amenityLabel}>{item.label}</Text>
               </View>
             ))}
+          </View>
+
+          {/* Interactive Mortgage & Monthly Payment Calculator */}
+          <Text style={styles.sectionHeading}>Mortgage & Payment Estimator</Text>
+          <View style={styles.calcCard}>
+            <View style={styles.calcTopRow}>
+              <View>
+                <Text style={styles.calcCaption}>Estimated Monthly (P&I)</Text>
+                <Text style={styles.calcMonthly}>
+                  ${mortgageStats.monthlyPayment.toLocaleString()}
+                  <Text style={styles.calcMoSuffix}>/mo</Text>
+                </Text>
+              </View>
+              <View style={styles.aprPill}>
+                <Ionicons
+                  name="calculator-outline"
+                  size={14}
+                  color={COLORS.primary}
+                />
+                <Text style={styles.aprText}>{interestRate.toFixed(2)}% APR</Text>
+              </View>
+            </View>
+
+            {/* Down Payment Selector */}
+            <View style={styles.calcGroup}>
+              <View style={styles.calcLabelRow}>
+                <Text style={styles.calcLabel}>Down Payment ({downPct}%)</Text>
+                <Text style={styles.calcSubValue}>
+                  ${mortgageStats.downPayment.toLocaleString()}
+                </Text>
+              </View>
+              <View style={styles.segmentRow}>
+                {DOWN_PAYMENT_OPTIONS.map((pct) => {
+                  const active = downPct === pct;
+                  return (
+                    <TouchableOpacity
+                      key={pct}
+                      style={[
+                        styles.segmentBtn,
+                        active && styles.segmentBtnActive,
+                      ]}
+                      onPress={() => setDownPct(pct)}
+                    >
+                      <Text
+                        style={[
+                          styles.segmentText,
+                          active && styles.segmentTextActive,
+                        ]}
+                      >
+                        {pct}%
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Loan Term & Interest Rate Controls */}
+            <View style={styles.dualControlRow}>
+              <View style={styles.dualCol}>
+                <Text style={styles.calcLabel}>Loan Term</Text>
+                <View style={styles.segmentRow}>
+                  {TERM_YEARS_OPTIONS.map((yr) => {
+                    const active = loanYears === yr;
+                    return (
+                      <TouchableOpacity
+                        key={yr}
+                        style={[
+                          styles.smallSegmentBtn,
+                          active && styles.segmentBtnActive,
+                        ]}
+                        onPress={() => setLoanYears(yr)}
+                      >
+                        <Text
+                          style={[
+                            styles.smallSegmentText,
+                            active && styles.segmentTextActive,
+                          ]}
+                        >
+                          {yr}y
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              <View style={styles.dualCol}>
+                <Text style={styles.calcLabel}>Interest Rate</Text>
+                <View style={styles.rateStepper}>
+                  <TouchableOpacity
+                    style={styles.stepBtn}
+                    onPress={() => adjustRate(-0.25)}
+                  >
+                    <Ionicons
+                      name="remove"
+                      size={16}
+                      color={COLORS.textPrimary}
+                    />
+                  </TouchableOpacity>
+                  <Text style={styles.rateValue}>{interestRate.toFixed(2)}%</Text>
+                  <TouchableOpacity
+                    style={styles.stepBtn}
+                    onPress={() => adjustRate(0.25)}
+                  >
+                    <Ionicons name="add" size={16} color={COLORS.textPrimary} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+
+            {/* Loan Principal Summary */}
+            <View style={styles.principalFooter}>
+              <Text style={styles.principalLabel}>Estimated Loan Principal</Text>
+              <Text style={styles.principalAmount}>
+                ${mortgageStats.principal.toLocaleString()}
+              </Text>
+            </View>
           </View>
 
           {/* Agent Profile Card */}
@@ -512,6 +671,160 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.textPrimary,
     flex: 1,
+  },
+  calcCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: SPACING.lg,
+    ...SHADOWS.subtle,
+  },
+  calcTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 14,
+  },
+  calcCaption: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+  },
+  calcMonthly: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: COLORS.primary,
+    marginTop: 2,
+  },
+  calcMoSuffix: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  aprPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: RADIUS.full,
+  },
+  aprText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  calcGroup: {
+    marginBottom: 14,
+  },
+  calcLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  calcLabel: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 6,
+  },
+  calcSubValue: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  segmentRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  smallSegmentBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  segmentBtnActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  segmentText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  smallSegmentText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  segmentTextActive: {
+    color: COLORS.white,
+  },
+  dualControlRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 14,
+  },
+  dualCol: {
+    flex: 1,
+  },
+  rateStepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 6,
+    height: 35,
+  },
+  stepBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    backgroundColor: COLORS.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  rateValue: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  principalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  principalLabel: {
+    fontSize: 12.5,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+  },
+  principalAmount: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
   },
   agentCard: {
     flexDirection: 'row',
