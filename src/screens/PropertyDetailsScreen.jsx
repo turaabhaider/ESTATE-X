@@ -22,6 +22,37 @@ const TOUR_TIMES = ['10:00 AM', '1:30 PM', '4:00 PM', '6:00 PM'];
 const DOWN_PAYMENT_OPTIONS = [10, 20, 30];
 const TERM_YEARS_OPTIONS = [15, 20, 30];
 
+const TRANSIT_ITEMS = [
+  {
+    id: 't1',
+    icon: 'train-outline',
+    type: 'Transit',
+    name: 'Express Metro Hub',
+    detail: '6 min walk • 0.3 mi',
+  },
+  {
+    id: 't2',
+    icon: 'restaurant-outline',
+    type: 'Dining',
+    name: 'Fine Dining & Cafes',
+    detail: '4 min walk • 0.2 mi',
+  },
+  {
+    id: 't3',
+    icon: 'school-outline',
+    type: 'Schools',
+    name: 'Premier Academy',
+    detail: '8 min drive • 2.1 mi',
+  },
+  {
+    id: 't4',
+    icon: 'leaf-outline',
+    type: 'Parks',
+    name: 'Botanical Reserve Trail',
+    detail: '5 min walk • 0.25 mi',
+  },
+];
+
 export default function PropertyDetailsScreen({ route, navigation }) {
   const { property } = route.params;
   const {
@@ -45,6 +76,23 @@ export default function PropertyDetailsScreen({ route, navigation }) {
 
   const isSaved = wishlist.includes(property.id);
   const isComparing = compareList.includes(property.id);
+
+  // Deterministic neighborhood scores derived from property rating & category
+  const neighborhoodScores = useMemo(() => {
+    const boost = Math.round((property.rating - 4.8) * 100);
+    const walkScore = Math.min(99, Math.max(72, 84 + boost));
+    const transitScore = Math.min(
+      98,
+      Math.max(68, (property.category === 'Commercial' ? 92 : 79) + boost)
+    );
+    const lifestyleScore = Math.min(99, Math.max(76, 88 + boost));
+
+    return [
+      { label: 'Walk Score', score: walkScore, tag: 'Walkable' },
+      { label: 'Transit', score: transitScore, tag: 'Connected' },
+      { label: 'Lifestyle', score: lifestyleScore, tag: 'Prime' },
+    ];
+  }, [property.rating, property.category]);
 
   // Normalize monthly figure when viewing a rental listing so calculator stays meaningful
   const basePrice =
@@ -389,6 +437,49 @@ export default function PropertyDetailsScreen({ route, navigation }) {
                 />
               </TouchableOpacity>
             </View>
+          </View>
+
+          {/* Neighborhood Score & Nearby Transit */}
+          <Text style={styles.sectionHeading}>
+            Neighborhood Score & Nearby Transit
+          </Text>
+          <View style={styles.neighborhoodCard}>
+            <View style={styles.scoreRow}>
+              {neighborhoodScores.map((s) => (
+                <View key={s.label} style={styles.scoreBox}>
+                  <Text style={styles.scoreNum}>{s.score}</Text>
+                  <Text style={styles.scoreLabel}>{s.label}</Text>
+                  <View style={styles.scoreTag}>
+                    <Text style={styles.scoreTagText}>{s.tag}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.transitDivider} />
+
+            {TRANSIT_ITEMS.map((item, index) => (
+              <View
+                key={item.id}
+                style={[
+                  styles.transitRow,
+                  index < TRANSIT_ITEMS.length - 1 && styles.transitRowBorder,
+                ]}
+              >
+                <View style={styles.transitIconBox}>
+                  <Ionicons
+                    name={item.icon}
+                    size={17}
+                    color={COLORS.primary}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.transitName}>{item.name}</Text>
+                  <Text style={styles.transitType}>{item.type}</Text>
+                </View>
+                <Text style={styles.transitDetail}>{item.detail}</Text>
+              </View>
+            ))}
           </View>
 
           {/* Location Map */}
@@ -874,6 +965,90 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.border,
+  },
+  neighborhoodCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: SPACING.lg,
+    ...SHADOWS.subtle,
+  },
+  scoreRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  scoreBox: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.md,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  scoreNum: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+  scoreLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginTop: 2,
+  },
+  scoreTag: {
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: RADIUS.full,
+    marginTop: 6,
+  },
+  scoreTagText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  transitDivider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginVertical: 14,
+  },
+  transitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    gap: 12,
+  },
+  transitRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  transitIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  transitName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  transitType: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 1,
+  },
+  transitDetail: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: COLORS.primary,
   },
   mapWrapper: {
     height: 170,
