@@ -1,17 +1,17 @@
 export const COLORS = {
-  background: '#FFFFFF',
-  surface: '#F7F7F5',      // Subtle warm-gray surface
-  surfaceAlt: '#EFECE6',   // Secondary warm neutral
+  background: '#FAFAF8',     // Crisp architectural alabaster
+  surface: '#F2F0EC',        // Soft warm stone surface
+  surfaceAlt: '#E8E5DF',     // Subtle divider / secondary surface
   card: '#FFFFFF',
-  primary: '#0F5132',      // Refined deep emerald green
-  primaryLight: '#E8F3EE', // Soft emerald tint
-  accent: '#198754',       // Vibrant emerald action color
-  textPrimary: '#14171A',  // Sophisticated dark charcoal
-  textSecondary: '#5B626A',
-  textMuted: '#8E959E',
-  border: '#E6E4DF',
-  gold: '#C59B27',
-  danger: '#DC3545',
+  primary: '#0B4F35',        // Refined architectural emerald
+  primaryLight: '#E6F2EC',   // Soft sage-emerald tint
+  accent: '#137A52',
+  textPrimary: '#111413',    // High-contrast ink charcoal
+  textSecondary: '#545D59',
+  textMuted: '#88928D',
+  border: '#E5E2DC',         // Quiet hairline border
+  gold: '#B88B1E',
+  danger: '#C93B4B',
   white: '#FFFFFF',
   black: '#000000',
 };
@@ -26,25 +26,25 @@ export const SPACING = {
 
 export const RADIUS = {
   sm: 8,
-  md: 14,
-  lg: 20,
-  xl: 28,
+  md: 12,
+  lg: 16,
+  xl: 22,
   full: 999,
 };
 
 export const SHADOWS = {
   subtle: {
-    shadowColor: '#14171A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 2,
+    shadowColor: '#111413',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1,
   },
   medium: {
-    shadowColor: '#14171A',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    elevation: 5,
+    shadowColor: '#111413',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 3,
   },
 };

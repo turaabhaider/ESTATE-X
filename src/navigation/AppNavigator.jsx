@@ -31,7 +31,9 @@ function MainTabs() {
             Home: focused ? 'home' : 'home-outline',
             Explore: focused ? 'compass' : 'compass-outline',
             Wishlist: focused ? 'heart' : 'heart-outline',
-            Messages: focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline',
+            Messages: focused
+              ? 'chatbubble-ellipses'
+              : 'chatbubble-ellipses-outline',
             Profile: focused ? 'person' : 'person-outline',
           };
           return <Ionicons name={icons[route.name]} size={22} color={color} />;
