@@ -9,7 +9,6 @@ import {
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { SPACING, RADIUS, SHADOWS } from '../theme/theme';
 import { PROPERTIES, CATEGORIES } from '../data/mockData';
@@ -49,7 +48,11 @@ export default function ExploreScreen({ navigation }) {
             { backgroundColor: colors.surface, borderColor: colors.border },
           ]}
         >
-          <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+          <Ionicons
+            name="search-outline"
+            size={18}
+            color={colors.textSecondary}
+          />
           <TextInput
             style={[styles.input, { color: colors.textPrimary }]}
             placeholder="Search neighborhood, address..."
@@ -148,7 +151,7 @@ export default function ExploreScreen({ navigation }) {
         })}
       </View>
 
-      {/* List or Interactive Map */}
+      {/* List or Location Pins Selector */}
       {viewMode === 'list' ? (
         <FlatList
           data={filteredData}
@@ -171,48 +174,69 @@ export default function ExploreScreen({ navigation }) {
           )}
         />
       ) : (
-        <View style={styles.mapContainer}>
-          <MapView
-            style={styles.map}
-            initialRegion={{
-              latitude: 34.0901,
-              longitude: -118.4065,
-              latitudeDelta: 12,
-              longitudeDelta: 12,
-            }}
-          >
-            {filteredData.map((prop) => {
-              const isSelected = selectedPin?.id === prop.id;
+        <View
+          style={[
+            styles.mapContainer,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <View style={styles.mapHeaderBlock}>
+            <Ionicons name="location-outline" size={20} color={colors.primary} />
+            <Text style={[styles.mapTitle, { color: colors.textPrimary }]}>
+              Select a Property Pin
+            </Text>
+            <Text style={[styles.mapSubtitle, { color: colors.textSecondary }]}>
+              Tap any listing below to preview its location and details.
+            </Text>
+          </View>
+
+          <FlatList
+            data={filteredData}
+            keyExtractor={(item) => `pin-${item.id}`}
+            contentContainerStyle={styles.pinList}
+            renderItem={({ item }) => {
+              const isSelected = selectedPin?.id === item.id;
               return (
-                <Marker
-                  key={prop.id}
-                  coordinate={prop.coords}
-                  onPress={() => setSelectedPin(prop)}
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => setSelectedPin(item)}
+                  style={[
+                    styles.pinRow,
+                    {
+                      backgroundColor: isSelected
+                        ? colors.primaryLight
+                        : colors.card,
+                      borderColor: isSelected ? colors.primary : colors.border,
+                    },
+                  ]}
                 >
-                  <View
-                    style={[
-                      styles.pricePin,
-                      {
-                        backgroundColor: isSelected
-                          ? colors.primary
-                          : colors.card,
-                        borderColor: colors.primary,
-                      },
-                    ]}
-                  >
+                  <View style={styles.pinTextWrap}>
                     <Text
                       style={[
-                        styles.pricePinText,
-                        { color: isSelected ? '#FFFFFF' : colors.primary },
+                        styles.pinTitle,
+                        { color: colors.textPrimary },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {item.title}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.pinCoords,
+                        { color: colors.textSecondary },
                       ]}
                     >
-                      {prop.priceFormatted}
+                      {item.location} · {item.coords.latitude.toFixed(4)},{' '}
+                      {item.coords.longitude.toFixed(4)}
                     </Text>
                   </View>
-                </Marker>
+                  <Text style={[styles.pinPrice, { color: colors.primary }]}>
+                    {item.priceFormatted}
+                  </Text>
+                </TouchableOpacity>
               );
-            })}
-          </MapView>
+            }}
+          />
 
           {selectedPin && (
             <TouchableOpacity
@@ -344,27 +368,57 @@ const styles = StyleSheet.create({
   },
   mapContainer: {
     flex: 1,
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
-  map: {
+  mapHeaderBlock: {
+    padding: SPACING.md,
+    gap: 4,
+  },
+  mapTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  mapSubtitle: {
+    fontSize: 12.5,
+  },
+  pinList: {
+    paddingHorizontal: SPACING.md,
+    paddingBottom: 120,
+    gap: 8,
+  },
+  pinRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    gap: 10,
+  },
+  pinTextWrap: {
     flex: 1,
   },
-  pricePin: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: RADIUS.sm,
-    borderWidth: 1,
-    ...SHADOWS.subtle,
+  pinTitle: {
+    fontSize: 13.5,
+    fontWeight: '600',
   },
-  pricePinText: {
+  pinCoords: {
     fontSize: 11.5,
+    marginTop: 2,
+  },
+  pinPrice: {
+    fontSize: 13,
     fontWeight: '700',
-    fontVariant: ['tabular-nums'],
   },
   floatingCard: {
     position: 'absolute',
-    bottom: 20,
-    left: SPACING.lg,
-    right: SPACING.lg,
+    bottom: 14,
+    left: 12,
+    right: 12,
     borderRadius: RADIUS.lg,
     padding: 12,
     flexDirection: 'row',
