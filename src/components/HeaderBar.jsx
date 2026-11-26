@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   StyleSheet,
   Modal,
@@ -12,27 +13,28 @@ import { SPACING, RADIUS, SHADOWS } from '../theme/theme';
 import { CITIES } from '../data/mockData';
 import { useApp } from '../context/AppContext';
 
-export default function HeaderBar({ onOpenCompare }) {
+export default function HeaderBar({ onOpenCompare, onOpenProfile }) {
   const { selectedCity, setSelectedCity, compareList, colors } = useApp();
   const [cityModalVisible, setCityModalVisible] = useState(false);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View>
-        <Text style={[styles.brandEyebrow, { color: colors.primary }]}>
-          ESTATEX PRIVATE
+        <Text style={[styles.locationCaption, { color: colors.textMuted }]}>
+          Location
         </Text>
         <TouchableOpacity
           style={styles.locationRow}
           activeOpacity={0.75}
           onPress={() => setCityModalVisible(true)}
         >
+          <Ionicons name="location" size={16} color={colors.primary} />
           <Text style={[styles.cityText, { color: colors.textPrimary }]}>
             {selectedCity}
           </Text>
           <Ionicons
             name="chevron-down"
-            size={16}
+            size={15}
             color={colors.textSecondary}
           />
         </TouchableOpacity>
@@ -53,7 +55,7 @@ export default function HeaderBar({ onOpenCompare }) {
           >
             <Ionicons
               name="git-compare-outline"
-              size={19}
+              size={18}
               color={colors.primary}
             />
             <View style={[styles.badge, { backgroundColor: colors.primary }]}>
@@ -71,13 +73,27 @@ export default function HeaderBar({ onOpenCompare }) {
         >
           <Ionicons
             name="notifications-outline"
-            size={20}
+            size={19}
             color={colors.textPrimary}
           />
           <View style={[styles.notifDot, { backgroundColor: colors.primary }]} />
         </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={onOpenProfile}
+          style={[styles.avatarWrap, { borderColor: colors.primary }]}
+        >
+          <Image
+            source={{
+              uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+            }}
+            style={styles.avatar}
+          />
+        </TouchableOpacity>
       </View>
 
+      {/* City Selector Modal */}
       <Modal
         visible={cityModalVisible}
         transparent
@@ -148,12 +164,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.sm,
-    paddingBottom: SPACING.md,
+    paddingBottom: 14,
   },
-  brandEyebrow: {
-    fontSize: 10.5,
-    fontWeight: '700',
-    letterSpacing: 1.4,
+  locationCaption: {
+    fontSize: 11.5,
+    fontWeight: '500',
     marginBottom: 2,
   },
   locationRow: {
@@ -162,18 +177,18 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   cityText: {
-    fontSize: 20,
+    fontSize: 16.5,
     fontWeight: '700',
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
   },
   actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   iconBtn: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     borderRadius: RADIUS.full,
     justifyContent: 'center',
     alignItems: 'center',
@@ -184,24 +199,36 @@ const styles = StyleSheet.create({
     top: -3,
     right: -3,
     borderRadius: RADIUS.full,
-    minWidth: 17,
-    height: 17,
+    minWidth: 16,
+    height: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: 3,
   },
   badgeText: {
     color: '#FFFFFF',
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '700',
   },
   notifDot: {
     position: 'absolute',
-    top: 10,
-    right: 11,
+    top: 9,
+    right: 10,
     width: 6,
     height: 6,
     borderRadius: 3,
+  },
+  avatarWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: RADIUS.full,
+    borderWidth: 1.5,
+    padding: 1.5,
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+    borderRadius: RADIUS.full,
   },
   modalBackdrop: {
     flex: 1,
