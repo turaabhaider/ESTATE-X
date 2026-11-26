@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,15 @@ import {
   Modal,
   Linking,
   Alert,
+  Share,
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme/theme';
+import { SPACING, RADIUS, SHADOWS } from '../theme/theme';
 import { useApp } from '../context/AppContext';
 
 const { width } = Dimensions.get('window');
+const DETAIL_TABS = ['About', 'Gallery', 'Review'];
 const TOUR_DATES = ['Tomorrow', 'Sat, Nov 28', 'Sun, Nov 29', 'Mon, Nov 30'];
 const TOUR_TIMES = ['10:00 AM', '1:30 PM', '4:00 PM', '6:00 PM'];
 const DOWN_PAYMENT_OPTIONS = [10, 20, 30];
@@ -28,28 +30,49 @@ const TRANSIT_ITEMS = [
     icon: 'train-outline',
     type: 'Transit',
     name: 'Express Metro Hub',
-    detail: '6 min walk • 0.3 mi',
+    detail: '6 min walk · 0.3 mi',
   },
   {
     id: 't2',
     icon: 'restaurant-outline',
     type: 'Dining',
     name: 'Fine Dining & Cafes',
-    detail: '4 min walk • 0.2 mi',
+    detail: '4 min walk · 0.2 mi',
   },
   {
     id: 't3',
     icon: 'school-outline',
     type: 'Schools',
     name: 'Premier Academy',
-    detail: '8 min drive • 2.1 mi',
+    detail: '8 min drive · 2.1 mi',
   },
   {
     id: 't4',
     icon: 'leaf-outline',
     type: 'Parks',
     name: 'Botanical Reserve Trail',
-    detail: '5 min walk • 0.25 mi',
+    detail: '5 min walk · 0.25 mi',
+  },
+];
+
+const CLIENT_REVIEWS = [
+  {
+    id: 'rev-1',
+    author: 'Claire Bennett',
+    role: 'Private Buyer',
+    rating: '5.0',
+    date: '2 weeks ago',
+    comment:
+      'Exceptional natural light throughout the main living pavilion and seamless indoor-outdoor flow. The architectural finishes feel truly bespoke.',
+  },
+  {
+    id: 'rev-2',
+    author: 'Julian Mercer',
+    role: 'Architect',
+    rating: '4.9',
+    date: '1 month ago',
+    comment:
+      'Quiet street presence, thoughtfully proportioned rooms, and effortless access to nearby dining and transit corridors.',
   },
 ];
 
@@ -62,9 +85,12 @@ export default function PropertyDetailsScreen({ route, navigation }) {
     toggleCompare,
     sendMessage,
     bookTour,
+    colors,
   } = useApp();
 
+  const galleryRef = useRef(null);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [activeTab, setActiveTab] = useState('About');
   const [bookingModal, setBookingModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(TOUR_DATES[0]);
   const [selectedTime, setSelectedTime] = useState(TOUR_TIMES[2]);
@@ -94,7 +120,6 @@ export default function PropertyDetailsScreen({ route, navigation }) {
     ];
   }, [property.rating, property.category]);
 
-  // Normalize monthly figure when viewing a rental listing so calculator stays meaningful
   const basePrice =
     property.category === 'Rent' ? property.price * 12 : property.price;
 
@@ -126,6 +151,21 @@ export default function PropertyDetailsScreen({ route, navigation }) {
     setActiveSlide(index);
   };
 
+  const handleSelectThumbnail = (idx) => {
+    setActiveSlide(idx);
+    galleryRef.current?.scrollTo({ x: idx * width, animated: true });
+  };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `${property.title} — ${property.priceFormatted}${property.period} (${property.address})`,
+      });
+    } catch (_) {
+      // Ignore dismissed share sheet
+    }
+  };
+
   const handleConfirmTour = () => {
     bookTour(property, selectedDate, selectedTime);
     setBookingModal(false);
@@ -146,21 +186,21 @@ export default function PropertyDetailsScreen({ route, navigation }) {
   };
 
   const adjustRate = (delta) => {
-    setInterestRate((prev) => {
-      const next = Math.min(15, Math.max(1, Number((prev + delta).toFixed(2))));
-      return next;
-    });
+    setInterestRate((prev) =>
+      Math.min(15, Math.max(1, Number((prev + delta).toFixed(2))))
+    );
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Image Gallery Carousel */}
+        {/* Hero Image Gallery Carousel with Floating Thumbnail Strip */}
         <View style={styles.galleryContainer}>
           <ScrollView
+            ref={galleryRef}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -172,351 +212,851 @@ export default function PropertyDetailsScreen({ route, navigation }) {
             ))}
           </ScrollView>
 
-          {/* Floating Back & Action Buttons */}
+          {/* Top Floating Controls */}
           <View style={styles.topControls}>
             <TouchableOpacity
-              style={styles.roundBtn}
+              style={[
+                styles.roundBtn,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
               onPress={() => navigation.goBack()}
             >
-              <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
+              <Ionicons
+                name="arrow-back"
+                size={19}
+                color={colors.textPrimary}
+              />
             </TouchableOpacity>
 
             <View style={styles.rightControls}>
               <TouchableOpacity
                 style={[
                   styles.roundBtn,
-                  isComparing && { backgroundColor: COLORS.primary },
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                ]}
+                onPress={handleShare}
+              >
+                <Ionicons
+                  name="share-social-outline"
+                  size={18}
+                  color={colors.textPrimary}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.roundBtn,
+                  {
+                    backgroundColor: isComparing ? colors.primary : colors.card,
+                    borderColor: isComparing ? colors.primary : colors.border,
+                  },
                 ]}
                 onPress={() => toggleCompare(property.id)}
               >
                 <Ionicons
                   name="git-compare-outline"
-                  size={19}
-                  color={isComparing ? COLORS.white : COLORS.textPrimary}
+                  size={18}
+                  color={isComparing ? '#FFFFFF' : colors.textPrimary}
                 />
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.roundBtn}
+                style={[
+                  styles.roundBtn,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                ]}
                 onPress={() => toggleWishlist(property.id)}
               >
                 <Ionicons
                   name={isSaved ? 'heart' : 'heart-outline'}
-                  size={20}
-                  color={isSaved ? COLORS.danger : COLORS.textPrimary}
+                  size={19}
+                  color={isSaved ? colors.danger : colors.textPrimary}
                 />
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Pagination Dots */}
-          <View style={styles.dotsRow}>
-            {property.images.map((_, i) => (
-              <View
-                key={i}
-                style={[styles.dot, activeSlide === i && styles.dotActive]}
-              />
-            ))}
+          {/* Floating Photo Thumbnail Strip */}
+          <View
+            style={[
+              styles.thumbDock,
+              {
+                backgroundColor: 'rgba(17, 20, 19, 0.72)',
+                borderColor: 'rgba(255, 255, 255, 0.22)',
+              },
+            ]}
+          >
+            {property.images.map((uri, idx) => {
+              const isSelected = activeSlide === idx;
+              return (
+                <TouchableOpacity
+                  key={`thumb-${idx}`}
+                  activeOpacity={0.85}
+                  onPress={() => handleSelectThumbnail(idx)}
+                  style={[
+                    styles.thumbItem,
+                    isSelected && {
+                      borderColor: '#FFFFFF',
+                      transform: [{ scale: 1.04 }],
+                    },
+                  ]}
+                >
+                  <Image source={{ uri }} style={styles.thumbImg} />
+                </TouchableOpacity>
+              );
+            })}
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setActiveTab('Gallery')}
+              style={styles.thumbMoreBox}
+            >
+              <Text style={styles.thumbMoreText}>
+                +{Math.max(property.images.length, 4)}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
         {/* Main Content Body */}
         <View style={styles.body}>
+          {/* Category Pill & Rating */}
           <View style={styles.badgeRow}>
-            <View style={styles.emeraldTag}>
-              <Text style={styles.emeraldTagText}>{property.category}</Text>
+            <View
+              style={[
+                styles.emeraldTag,
+                { backgroundColor: colors.primaryLight },
+              ]}
+            >
+              <Text style={[styles.emeraldTagText, { color: colors.primary }]}>
+                {property.category}
+              </Text>
             </View>
+
             <View style={styles.ratingBadge}>
-              <Ionicons name="star" size={14} color={COLORS.gold} />
-              <Text style={styles.ratingText}>
+              <Ionicons name="star" size={14} color={colors.gold} />
+              <Text
+                style={[styles.ratingText, { color: colors.textSecondary }]}
+              >
                 {property.rating} ({property.reviews} reviews)
               </Text>
             </View>
           </View>
 
-          <Text style={styles.title}>{property.title}</Text>
+          {/* Title & Address */}
+          <Text style={[styles.title, { color: colors.textPrimary }]}>
+            {property.title}
+          </Text>
           <View style={styles.addressRow}>
-            <Ionicons name="location" size={16} color={COLORS.primary} />
-            <Text style={styles.address}>{property.address}</Text>
+            <Ionicons
+              name="location-outline"
+              size={15}
+              color={colors.textSecondary}
+            />
+            <Text style={[styles.address, { color: colors.textSecondary }]}>
+              {property.address}
+            </Text>
           </View>
 
-          {/* Key Metrics Overview Box */}
-          <View style={styles.metricsBox}>
-            {property.beds > 0 && (
-              <View style={styles.metricItem}>
-                <Ionicons name="bed-outline" size={22} color={COLORS.primary} />
-                <Text style={styles.metricValue}>{property.beds}</Text>
-                <Text style={styles.metricLabel}>Bedrooms</Text>
-              </View>
-            )}
-            {property.baths > 0 && (
-              <View style={styles.metricItem}>
-                <Ionicons name="water-outline" size={22} color={COLORS.primary} />
-                <Text style={styles.metricValue}>{property.baths}</Text>
-                <Text style={styles.metricLabel}>Bathrooms</Text>
-              </View>
-            )}
-            <View style={styles.metricItem}>
-              <Ionicons name="resize-outline" size={22} color={COLORS.primary} />
-              <Text style={styles.metricValue}>
-                {property.sqft.toLocaleString()}
-              </Text>
-              <Text style={styles.metricLabel}>Sq Ft</Text>
-            </View>
+          {/* About / Gallery / Review Architectural Tabs */}
+          <View style={[styles.tabBar, { borderBottomColor: colors.border }]}>
+            {DETAIL_TABS.map((tab) => {
+              const active = activeTab === tab;
+              return (
+                <TouchableOpacity
+                  key={tab}
+                  activeOpacity={0.8}
+                  onPress={() => setActiveTab(tab)}
+                  style={[
+                    styles.tabItem,
+                    active && {
+                      borderBottomColor: colors.primary,
+                      borderBottomWidth: 2,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.tabLabel,
+                      {
+                        color: active ? colors.primary : colors.textSecondary,
+                        fontWeight: active ? '700' : '600',
+                      },
+                    ]}
+                  >
+                    {tab}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
-          {/* Description */}
-          <Text style={styles.sectionHeading}>Architectural Overview</Text>
-          <Text style={styles.description}>{property.description}</Text>
-
-          {/* Amenities Grid */}
-          <Text style={styles.sectionHeading}>Signature Amenities</Text>
-          <View style={styles.amenitiesGrid}>
-            {property.amenities.map((item, idx) => (
-              <View key={idx} style={styles.amenityCard}>
-                <View style={styles.amenityIconBox}>
-                  <Ionicons name={item.icon} size={18} color={COLORS.primary} />
-                </View>
-                <Text style={styles.amenityLabel}>{item.label}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Interactive Mortgage & Monthly Payment Calculator */}
-          <Text style={styles.sectionHeading}>Mortgage & Payment Estimator</Text>
-          <View style={styles.calcCard}>
-            <View style={styles.calcTopRow}>
-              <View>
-                <Text style={styles.calcCaption}>Estimated Monthly (P&I)</Text>
-                <Text style={styles.calcMonthly}>
-                  ${mortgageStats.monthlyPayment.toLocaleString()}
-                  <Text style={styles.calcMoSuffix}>/mo</Text>
-                </Text>
-              </View>
-              <View style={styles.aprPill}>
-                <Ionicons
-                  name="calculator-outline"
-                  size={14}
-                  color={COLORS.primary}
-                />
-                <Text style={styles.aprText}>{interestRate.toFixed(2)}% APR</Text>
-              </View>
-            </View>
-
-            {/* Down Payment Selector */}
-            <View style={styles.calcGroup}>
-              <View style={styles.calcLabelRow}>
-                <Text style={styles.calcLabel}>Down Payment ({downPct}%)</Text>
-                <Text style={styles.calcSubValue}>
-                  ${mortgageStats.downPayment.toLocaleString()}
-                </Text>
-              </View>
-              <View style={styles.segmentRow}>
-                {DOWN_PAYMENT_OPTIONS.map((pct) => {
-                  const active = downPct === pct;
-                  return (
-                    <TouchableOpacity
-                      key={pct}
+          {/* TAB 1: ABOUT */}
+          {activeTab === 'About' && (
+            <>
+              {/* Key Architectural Specs */}
+              <View
+                style={[
+                  styles.metricsBox,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                {property.beds > 0 && (
+                  <View style={styles.metricItem}>
+                    <Ionicons
+                      name="bed-outline"
+                      size={20}
+                      color={colors.primary}
+                    />
+                    <Text
                       style={[
-                        styles.segmentBtn,
-                        active && styles.segmentBtnActive,
+                        styles.metricValue,
+                        { color: colors.textPrimary },
                       ]}
-                      onPress={() => setDownPct(pct)}
                     >
+                      {property.beds} Beds
+                    </Text>
+                  </View>
+                )}
+                {property.baths > 0 && (
+                  <View style={styles.metricItem}>
+                    <Ionicons
+                      name="water-outline"
+                      size={20}
+                      color={colors.primary}
+                    />
+                    <Text
+                      style={[
+                        styles.metricValue,
+                        { color: colors.textPrimary },
+                      ]}
+                    >
+                      {property.baths} Baths
+                    </Text>
+                  </View>
+                )}
+                <View style={styles.metricItem}>
+                  <Ionicons
+                    name="resize-outline"
+                    size={20}
+                    color={colors.primary}
+                  />
+                  <Text
+                    style={[styles.metricValue, { color: colors.textPrimary }]}
+                  >
+                    {property.sqft.toLocaleString()} sqft
+                  </Text>
+                </View>
+              </View>
+
+              {/* Description */}
+              <Text
+                style={[styles.sectionHeading, { color: colors.textPrimary }]}
+              >
+                Description
+              </Text>
+              <Text
+                style={[styles.description, { color: colors.textSecondary }]}
+              >
+                {property.description}
+              </Text>
+
+              {/* Signature Amenities */}
+              <Text
+                style={[styles.sectionHeading, { color: colors.textPrimary }]}
+              >
+                Signature Amenities
+              </Text>
+              <View style={styles.amenitiesGrid}>
+                {property.amenities.map((item, idx) => (
+                  <View
+                    key={idx}
+                    style={[
+                      styles.amenityCard,
+                      {
+                        backgroundColor: colors.surface,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.amenityIconBox,
+                        { backgroundColor: colors.primaryLight },
+                      ]}
+                    >
+                      <Ionicons
+                        name={item.icon}
+                        size={17}
+                        color={colors.primary}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.amenityLabel,
+                        { color: colors.textPrimary },
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* Interactive Mortgage & Payment Estimator */}
+              <Text
+                style={[styles.sectionHeading, { color: colors.textPrimary }]}
+              >
+                Mortgage & Payment Estimator
+              </Text>
+              <View
+                style={[
+                  styles.calcCard,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <View style={styles.calcTopRow}>
+                  <View>
+                    <Text
+                      style={[
+                        styles.calcCaption,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      Estimated Monthly (P&I)
+                    </Text>
+                    <Text
+                      style={[styles.calcMonthly, { color: colors.primary }]}
+                    >
+                      ${mortgageStats.monthlyPayment.toLocaleString()}
                       <Text
                         style={[
-                          styles.segmentText,
-                          active && styles.segmentTextActive,
+                          styles.calcMoSuffix,
+                          { color: colors.textSecondary },
                         ]}
                       >
-                        {pct}%
+                        /mo
                       </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.aprPill,
+                      { backgroundColor: colors.primaryLight },
+                    ]}
+                  >
+                    <Ionicons
+                      name="calculator-outline"
+                      size={14}
+                      color={colors.primary}
+                    />
+                    <Text style={[styles.aprText, { color: colors.primary }]}>
+                      {interestRate.toFixed(2)}% APR
+                    </Text>
+                  </View>
+                </View>
 
-            {/* Loan Term & Interest Rate Controls */}
-            <View style={styles.dualControlRow}>
-              <View style={styles.dualCol}>
-                <Text style={styles.calcLabel}>Loan Term</Text>
-                <View style={styles.segmentRow}>
-                  {TERM_YEARS_OPTIONS.map((yr) => {
-                    const active = loanYears === yr;
-                    return (
+                {/* Down Payment Selector */}
+                <View style={styles.calcGroup}>
+                  <View style={styles.calcLabelRow}>
+                    <Text
+                      style={[styles.calcLabel, { color: colors.textPrimary }]}
+                    >
+                      Down Payment ({downPct}%)
+                    </Text>
+                    <Text
+                      style={[styles.calcSubValue, { color: colors.primary }]}
+                    >
+                      ${mortgageStats.downPayment.toLocaleString()}
+                    </Text>
+                  </View>
+                  <View style={styles.segmentRow}>
+                    {DOWN_PAYMENT_OPTIONS.map((pct) => {
+                      const active = downPct === pct;
+                      return (
+                        <TouchableOpacity
+                          key={pct}
+                          style={[
+                            styles.segmentBtn,
+                            {
+                              backgroundColor: active
+                                ? colors.primary
+                                : colors.card,
+                              borderColor: active
+                                ? colors.primary
+                                : colors.border,
+                            },
+                          ]}
+                          onPress={() => setDownPct(pct)}
+                        >
+                          <Text
+                            style={[
+                              styles.segmentText,
+                              {
+                                color: active ? '#FFFFFF' : colors.textPrimary,
+                              },
+                            ]}
+                          >
+                            {pct}%
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                {/* Loan Term & Interest Rate */}
+                <View style={styles.dualControlRow}>
+                  <View style={styles.dualCol}>
+                    <Text
+                      style={[styles.calcLabel, { color: colors.textPrimary }]}
+                    >
+                      Loan Term
+                    </Text>
+                    <View style={styles.segmentRow}>
+                      {TERM_YEARS_OPTIONS.map((yr) => {
+                        const active = loanYears === yr;
+                        return (
+                          <TouchableOpacity
+                            key={yr}
+                            style={[
+                              styles.smallSegmentBtn,
+                              {
+                                backgroundColor: active
+                                  ? colors.primary
+                                  : colors.card,
+                                borderColor: active
+                                  ? colors.primary
+                                  : colors.border,
+                              },
+                            ]}
+                            onPress={() => setLoanYears(yr)}
+                          >
+                            <Text
+                              style={[
+                                styles.smallSegmentText,
+                                {
+                                  color: active
+                                    ? '#FFFFFF'
+                                    : colors.textPrimary,
+                                },
+                              ]}
+                            >
+                              {yr}y
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+
+                  <View style={styles.dualCol}>
+                    <Text
+                      style={[styles.calcLabel, { color: colors.textPrimary }]}
+                    >
+                      Interest Rate
+                    </Text>
+                    <View
+                      style={[
+                        styles.rateStepper,
+                        {
+                          backgroundColor: colors.card,
+                          borderColor: colors.border,
+                        },
+                      ]}
+                    >
                       <TouchableOpacity
-                        key={yr}
                         style={[
-                          styles.smallSegmentBtn,
-                          active && styles.segmentBtnActive,
+                          styles.stepBtn,
+                          { backgroundColor: colors.surface },
                         ]}
-                        onPress={() => setLoanYears(yr)}
+                        onPress={() => adjustRate(-0.25)}
+                      >
+                        <Ionicons
+                          name="remove"
+                          size={15}
+                          color={colors.textPrimary}
+                        />
+                      </TouchableOpacity>
+                      <Text
+                        style={[
+                          styles.rateValue,
+                          { color: colors.textPrimary },
+                        ]}
+                      >
+                        {interestRate.toFixed(2)}%
+                      </Text>
+                      <TouchableOpacity
+                        style={[
+                          styles.stepBtn,
+                          { backgroundColor: colors.surface },
+                        ]}
+                        onPress={() => adjustRate(0.25)}
+                      >
+                        <Ionicons
+                          name="add"
+                          size={15}
+                          color={colors.textPrimary}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+
+                <View
+                  style={[
+                    styles.principalFooter,
+                    { borderTopColor: colors.border },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.principalLabel,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    Estimated Loan Principal
+                  </Text>
+                  <Text
+                    style={[
+                      styles.principalAmount,
+                      { color: colors.textPrimary },
+                    ]}
+                  >
+                    ${mortgageStats.principal.toLocaleString()}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Listing Agent Card */}
+              <Text
+                style={[styles.sectionHeading, { color: colors.textPrimary }]}
+              >
+                Listing Agent
+              </Text>
+              <View
+                style={[
+                  styles.agentCard,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <Image
+                  source={{ uri: property.agent.avatar }}
+                  style={styles.agentAvatar}
+                />
+                <View style={styles.agentInfo}>
+                  <Text
+                    style={[styles.agentName, { color: colors.textPrimary }]}
+                  >
+                    {property.agent.name}
+                  </Text>
+                  <Text
+                    style={[styles.agentRole, { color: colors.textSecondary }]}
+                  >
+                    {property.agent.role}
+                  </Text>
+                  <Text style={[styles.agentStats, { color: colors.primary }]}>
+                    ★ {property.agent.rating} · {property.agent.sales}
+                  </Text>
+                </View>
+
+                <View style={styles.agentActions}>
+                  <TouchableOpacity
+                    style={[
+                      styles.agentIconBtn,
+                      {
+                        backgroundColor: colors.card,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                    onPress={handleMessageAgent}
+                  >
+                    <Ionicons
+                      name="chatbubble-ellipses-outline"
+                      size={18}
+                      color={colors.primary}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.agentIconBtn,
+                      {
+                        backgroundColor: colors.card,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                    onPress={() =>
+                      Linking.openURL(`tel:${property.agent.phone}`)
+                    }
+                  >
+                    <Ionicons
+                      name="call-outline"
+                      size={18}
+                      color={colors.primary}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Neighborhood Score & Nearby Transit */}
+              <Text
+                style={[styles.sectionHeading, { color: colors.textPrimary }]}
+              >
+                Neighborhood Score & Nearby Transit
+              </Text>
+              <View
+                style={[
+                  styles.neighborhoodCard,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <View style={styles.scoreRow}>
+                  {neighborhoodScores.map((s) => (
+                    <View
+                      key={s.label}
+                      style={[
+                        styles.scoreBox,
+                        {
+                          backgroundColor: colors.card,
+                          borderColor: colors.border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[styles.scoreNum, { color: colors.primary }]}
+                      >
+                        {s.score}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.scoreLabel,
+                          { color: colors.textPrimary },
+                        ]}
+                      >
+                        {s.label}
+                      </Text>
+                      <View
+                        style={[
+                          styles.scoreTag,
+                          { backgroundColor: colors.primaryLight },
+                        ]}
                       >
                         <Text
                           style={[
-                            styles.smallSegmentText,
-                            active && styles.segmentTextActive,
+                            styles.scoreTagText,
+                            { color: colors.primary },
                           ]}
                         >
-                          {yr}y
+                          {s.tag}
                         </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+                      </View>
+                    </View>
+                  ))}
                 </View>
-              </View>
 
-              <View style={styles.dualCol}>
-                <Text style={styles.calcLabel}>Interest Rate</Text>
-                <View style={styles.rateStepper}>
-                  <TouchableOpacity
-                    style={styles.stepBtn}
-                    onPress={() => adjustRate(-0.25)}
-                  >
-                    <Ionicons
-                      name="remove"
-                      size={16}
-                      color={COLORS.textPrimary}
-                    />
-                  </TouchableOpacity>
-                  <Text style={styles.rateValue}>{interestRate.toFixed(2)}%</Text>
-                  <TouchableOpacity
-                    style={styles.stepBtn}
-                    onPress={() => adjustRate(0.25)}
-                  >
-                    <Ionicons name="add" size={16} color={COLORS.textPrimary} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-
-            {/* Loan Principal Summary */}
-            <View style={styles.principalFooter}>
-              <Text style={styles.principalLabel}>Estimated Loan Principal</Text>
-              <Text style={styles.principalAmount}>
-                ${mortgageStats.principal.toLocaleString()}
-              </Text>
-            </View>
-          </View>
-
-          {/* Agent Profile Card */}
-          <Text style={styles.sectionHeading}>Listing Advisor</Text>
-          <View style={styles.agentCard}>
-            <Image
-              source={{ uri: property.agent.avatar }}
-              style={styles.agentAvatar}
-            />
-            <View style={styles.agentInfo}>
-              <Text style={styles.agentName}>{property.agent.name}</Text>
-              <Text style={styles.agentRole}>{property.agent.role}</Text>
-              <Text style={styles.agentStats}>
-                ★ {property.agent.rating} • {property.agent.sales}
-              </Text>
-            </View>
-
-            <View style={styles.agentActions}>
-              <TouchableOpacity
-                style={styles.agentIconBtn}
-                onPress={handleMessageAgent}
-              >
-                <Ionicons
-                  name="chatbubble-ellipses-outline"
-                  size={19}
-                  color={COLORS.primary}
+                <View
+                  style={[
+                    styles.transitDivider,
+                    { backgroundColor: colors.border },
+                  ]}
                 />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.agentIconBtn}
-                onPress={() => Linking.openURL(`tel:${property.agent.phone}`)}
-              >
-                <Ionicons
-                  name="call-outline"
-                  size={19}
-                  color={COLORS.primary}
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
 
-          {/* Neighborhood Score & Nearby Transit */}
-          <Text style={styles.sectionHeading}>
-            Neighborhood Score & Nearby Transit
-          </Text>
-          <View style={styles.neighborhoodCard}>
-            <View style={styles.scoreRow}>
-              {neighborhoodScores.map((s) => (
-                <View key={s.label} style={styles.scoreBox}>
-                  <Text style={styles.scoreNum}>{s.score}</Text>
-                  <Text style={styles.scoreLabel}>{s.label}</Text>
-                  <View style={styles.scoreTag}>
-                    <Text style={styles.scoreTagText}>{s.tag}</Text>
+                {TRANSIT_ITEMS.map((item, index) => (
+                  <View
+                    key={item.id}
+                    style={[
+                      styles.transitRow,
+                      index < TRANSIT_ITEMS.length - 1 && [
+                        styles.transitRowBorder,
+                        { borderBottomColor: colors.border },
+                      ],
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.transitIconBox,
+                        { backgroundColor: colors.primaryLight },
+                      ]}
+                    >
+                      <Ionicons
+                        name={item.icon}
+                        size={16}
+                        color={colors.primary}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={[
+                          styles.transitName,
+                          { color: colors.textPrimary },
+                        ]}
+                      >
+                        {item.name}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.transitType,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        {item.type}
+                      </Text>
+                    </View>
+                    <Text
+                      style={[styles.transitDetail, { color: colors.primary }]}
+                    >
+                      {item.detail}
+                    </Text>
                   </View>
+                ))}
+              </View>
+
+              {/* Location Map */}
+              <Text
+                style={[styles.sectionHeading, { color: colors.textPrimary }]}
+              >
+                Location
+              </Text>
+              <View
+                style={[styles.mapWrapper, { borderColor: colors.border }]}
+              >
+                <MapView
+                  style={styles.miniMap}
+                  initialRegion={{
+                    ...property.coords,
+                    latitudeDelta: 0.015,
+                    longitudeDelta: 0.015,
+                  }}
+                  scrollEnabled={false}
+                >
+                  <Marker coordinate={property.coords} />
+                </MapView>
+              </View>
+            </>
+          )}
+
+          {/* TAB 2: GALLERY */}
+          {activeTab === 'Gallery' && (
+            <View style={styles.galleryGrid}>
+              {property.images.map((uri, idx) => (
+                <TouchableOpacity
+                  key={`gal-${idx}`}
+                  activeOpacity={0.9}
+                  onPress={() => handleSelectThumbnail(idx)}
+                  style={[
+                    styles.galleryGridCard,
+                    { borderColor: colors.border },
+                  ]}
+                >
+                  <Image source={{ uri }} style={styles.galleryGridImg} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {/* TAB 3: REVIEW */}
+          {activeTab === 'Review' && (
+            <View style={styles.reviewsList}>
+              {CLIENT_REVIEWS.map((rev) => (
+                <View
+                  key={rev.id}
+                  style={[
+                    styles.reviewCard,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
+                  <View style={styles.reviewHeader}>
+                    <View>
+                      <Text
+                        style={[
+                          styles.reviewAuthor,
+                          { color: colors.textPrimary },
+                        ]}
+                      >
+                        {rev.author}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.reviewMeta,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        {rev.role} · {rev.date}
+                      </Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.reviewScorePill,
+                        { backgroundColor: colors.primaryLight },
+                      ]}
+                    >
+                      <Ionicons name="star" size={12} color={colors.gold} />
+                      <Text
+                        style={[
+                          styles.reviewScoreText,
+                          { color: colors.primary },
+                        ]}
+                      >
+                        {rev.rating}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text
+                    style={[
+                      styles.reviewComment,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    {rev.comment}
+                  </Text>
                 </View>
               ))}
             </View>
-
-            <View style={styles.transitDivider} />
-
-            {TRANSIT_ITEMS.map((item, index) => (
-              <View
-                key={item.id}
-                style={[
-                  styles.transitRow,
-                  index < TRANSIT_ITEMS.length - 1 && styles.transitRowBorder,
-                ]}
-              >
-                <View style={styles.transitIconBox}>
-                  <Ionicons
-                    name={item.icon}
-                    size={17}
-                    color={COLORS.primary}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.transitName}>{item.name}</Text>
-                  <Text style={styles.transitType}>{item.type}</Text>
-                </View>
-                <Text style={styles.transitDetail}>{item.detail}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Location Map */}
-          <Text style={styles.sectionHeading}>Neighborhood & Location</Text>
-          <View style={styles.mapWrapper}>
-            <MapView
-              style={styles.miniMap}
-              initialRegion={{
-                ...property.coords,
-                latitudeDelta: 0.015,
-                longitudeDelta: 0.015,
-              }}
-              scrollEnabled={false}
-            >
-              <Marker coordinate={property.coords} />
-            </MapView>
-          </View>
+          )}
         </View>
       </ScrollView>
 
-      {/* Sticky Bottom Price & Schedule Tour CTA */}
-      <View style={styles.bottomBar}>
+      {/* Sticky Bottom Total Price & Book Now Bar */}
+      <View
+        style={[
+          styles.bottomBar,
+          { backgroundColor: colors.card, borderTopColor: colors.border },
+        ]}
+      >
         <View>
-          <Text style={styles.priceCaption}>Listing Price</Text>
-          <Text style={styles.bottomPrice}>
+          <Text style={[styles.priceCaption, { color: colors.textSecondary }]}>
+            Total Price
+          </Text>
+          <Text style={[styles.bottomPrice, { color: colors.primary }]}>
             {property.priceFormatted}
-            <Text style={styles.bottomPeriod}>{property.period}</Text>
+            <Text
+              style={[styles.bottomPeriod, { color: colors.textSecondary }]}
+            >
+              {property.period}
+            </Text>
           </Text>
         </View>
 
         <TouchableOpacity
-          style={styles.ctaButton}
+          style={[styles.ctaButton, { backgroundColor: colors.primary }]}
           activeOpacity={0.88}
           onPress={() => setBookingModal(true)}
         >
-          <Ionicons name="calendar-outline" size={18} color={COLORS.white} />
-          <Text style={styles.ctaText}>Book Viewing</Text>
+          <Text style={styles.ctaText}>Book Now</Text>
         </TouchableOpacity>
       </View>
 
@@ -528,15 +1068,24 @@ export default function PropertyDetailsScreen({ route, navigation }) {
         onRequestClose={() => setBookingModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
+          <View
+            style={[
+              styles.modalSheet,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Schedule Private Viewing</Text>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+                Schedule Private Viewing
+              </Text>
               <TouchableOpacity onPress={() => setBookingModal(false)}>
-                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+                <Ionicons name="close" size={22} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.modalLabel}>Select Date</Text>
+            <Text style={[styles.modalLabel, { color: colors.textPrimary }]}>
+              Select Date
+            </Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -547,11 +1096,22 @@ export default function PropertyDetailsScreen({ route, navigation }) {
                 return (
                   <TouchableOpacity
                     key={d}
-                    style={[styles.slotPill, active && styles.slotPillActive]}
+                    style={[
+                      styles.slotPill,
+                      {
+                        backgroundColor: active
+                          ? colors.primary
+                          : colors.surface,
+                        borderColor: active ? colors.primary : colors.border,
+                      },
+                    ]}
                     onPress={() => setSelectedDate(d)}
                   >
                     <Text
-                      style={[styles.slotText, active && styles.slotTextActive]}
+                      style={[
+                        styles.slotText,
+                        { color: active ? '#FFFFFF' : colors.textPrimary },
+                      ]}
                     >
                       {d}
                     </Text>
@@ -560,18 +1120,31 @@ export default function PropertyDetailsScreen({ route, navigation }) {
               })}
             </ScrollView>
 
-            <Text style={styles.modalLabel}>Preferred Time</Text>
+            <Text style={[styles.modalLabel, { color: colors.textPrimary }]}>
+              Preferred Time
+            </Text>
             <View style={styles.timeGrid}>
               {TOUR_TIMES.map((t) => {
                 const active = selectedTime === t;
                 return (
                   <TouchableOpacity
                     key={t}
-                    style={[styles.slotPill, active && styles.slotPillActive]}
+                    style={[
+                      styles.slotPill,
+                      {
+                        backgroundColor: active
+                          ? colors.primary
+                          : colors.surface,
+                        borderColor: active ? colors.primary : colors.border,
+                      },
+                    ]}
                     onPress={() => setSelectedTime(t)}
                   >
                     <Text
-                      style={[styles.slotText, active && styles.slotTextActive]}
+                      style={[
+                        styles.slotText,
+                        { color: active ? '#FFFFFF' : colors.textPrimary },
+                      ]}
                     >
                       {t}
                     </Text>
@@ -581,7 +1154,7 @@ export default function PropertyDetailsScreen({ route, navigation }) {
             </View>
 
             <TouchableOpacity
-              style={styles.confirmBtn}
+              style={[styles.confirmBtn, { backgroundColor: colors.primary }]}
               onPress={handleConfirmTour}
             >
               <Text style={styles.confirmBtnText}>Confirm Appointment</Text>
@@ -596,22 +1169,21 @@ export default function PropertyDetailsScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   scrollContent: {
-    paddingBottom: 110,
+    paddingBottom: 112,
   },
   galleryContainer: {
-    height: 340,
+    height: 320,
     position: 'relative',
   },
   heroImage: {
     width,
-    height: 340,
+    height: 320,
   },
   topControls: {
     position: 'absolute',
-    top: 50,
+    top: 48,
     left: SPACING.lg,
     right: SPACING.lg,
     flexDirection: 'row',
@@ -619,33 +1191,53 @@ const styles = StyleSheet.create({
   },
   rightControls: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   roundBtn: {
-    width: 42,
-    height: 42,
+    width: 40,
+    height: 40,
     borderRadius: RADIUS.full,
-    backgroundColor: 'rgba(255,255,255,0.92)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
     ...SHADOWS.subtle,
   },
-  dotsRow: {
+  thumbDock: {
     position: 'absolute',
-    bottom: 18,
+    bottom: 14,
     alignSelf: 'center',
     flexDirection: 'row',
-    gap: 6,
+    alignItems: 'center',
+    gap: 8,
+    padding: 6,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
   },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.5)',
+  thumbItem: {
+    width: 46,
+    height: 46,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
   },
-  dotActive: {
-    width: 20,
-    backgroundColor: COLORS.white,
+  thumbImg: {
+    width: '100%',
+    height: '100%',
+  },
+  thumbMoreBox: {
+    width: 46,
+    height: 46,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  thumbMoreText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   body: {
     padding: SPACING.lg,
@@ -654,18 +1246,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   emeraldTag: {
-    backgroundColor: COLORS.primaryLight,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: RADIUS.full,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
   emeraldTagText: {
-    color: COLORS.primary,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
+    letterSpacing: 0.4,
     textTransform: 'uppercase',
   },
   ratingBadge: {
@@ -674,62 +1265,67 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   ratingText: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontVariant: ['tabular-nums'],
   },
   title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
+    fontSize: 22,
+    fontWeight: '700',
     letterSpacing: -0.4,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   addressRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    marginBottom: SPACING.lg,
+    gap: 4,
+    marginBottom: SPACING.md,
   },
   address: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
+    fontSize: 13.5,
     flex: 1,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    marginBottom: SPACING.md,
+  },
+  tabItem: {
+    flex: 1,
+    paddingVertical: 11,
+    alignItems: 'center',
+  },
+  tabLabel: {
+    fontSize: 14,
   },
   metricsBox: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
-    paddingVertical: 16,
+    borderRadius: RADIUS.md,
+    paddingVertical: 14,
     borderWidth: 1,
-    borderColor: COLORS.border,
     marginBottom: SPACING.lg,
   },
   metricItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 7,
   },
   metricValue: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-  },
-  metricLabel: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
+    fontSize: 13.5,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   sectionHeading: {
-    fontSize: 17,
+    fontSize: 16.5,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    letterSpacing: -0.2,
     marginBottom: 10,
-    marginTop: 6,
+    marginTop: 4,
   },
   description: {
-    fontSize: 14.5,
-    lineHeight: 22,
-    color: COLORS.textSecondary,
+    fontSize: 14,
+    lineHeight: 21,
     marginBottom: SPACING.lg,
   },
   amenitiesGrid: {
@@ -743,34 +1339,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: COLORS.surface,
-    padding: 12,
+    padding: 11,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   amenityIconBox: {
-    width: 34,
-    height: 34,
-    borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.primaryLight,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
   amenityLabel: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     flex: 1,
   },
   calcCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.lg,
     padding: SPACING.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
     marginBottom: SPACING.lg,
-    ...SHADOWS.subtle,
   },
   calcTopRow: {
     flexDirection: 'row',
@@ -780,33 +1369,30 @@ const styles = StyleSheet.create({
   },
   calcCaption: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     fontWeight: '600',
   },
   calcMonthly: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: COLORS.primary,
+    fontSize: 22,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
     marginTop: 2,
   },
   calcMoSuffix: {
-    fontSize: 13.5,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontSize: 13,
+    fontWeight: '500',
   },
   aprPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: COLORS.primaryLight,
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: 5,
     borderRadius: RADIUS.full,
   },
   aprText: {
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: '700',
-    color: COLORS.primary,
+    fontVariant: ['tabular-nums'],
   },
   calcGroup: {
     marginBottom: 14,
@@ -815,18 +1401,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   calcLabel: {
     fontSize: 12.5,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginBottom: 6,
   },
   calcSubValue: {
     fontSize: 12.5,
     fontWeight: '700',
-    color: COLORS.primary,
+    fontVariant: ['tabular-nums'],
   },
   segmentRow: {
     flexDirection: 'row',
@@ -835,37 +1420,26 @@ const styles = StyleSheet.create({
   segmentBtn: {
     flex: 1,
     paddingVertical: 9,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.sm,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   smallSegmentBtn: {
     flex: 1,
     paddingVertical: 8,
     borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.white,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  segmentBtnActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
   },
   segmentText: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontVariant: ['tabular-nums'],
   },
   smallSegmentText: {
     fontSize: 12,
     fontWeight: '700',
-    color: COLORS.textPrimary,
-  },
-  segmentTextActive: {
-    color: COLORS.white,
+    fontVariant: ['tabular-nums'],
   },
   dualControlRow: {
     flexDirection: 'row',
@@ -879,10 +1453,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.sm,
     borderWidth: 1,
-    borderColor: COLORS.border,
     paddingHorizontal: 6,
     height: 35,
   },
@@ -890,14 +1462,13 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 6,
-    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
   rateValue: {
     fontSize: 12.5,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontVariant: ['tabular-nums'],
   },
   principalFooter: {
     flexDirection: 'row',
@@ -905,31 +1476,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
   },
   principalLabel: {
     fontSize: 12.5,
-    color: COLORS.textSecondary,
     fontWeight: '600',
   },
   principalAmount: {
     fontSize: 14,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   agentCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    padding: 14,
+    padding: 13,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: COLORS.border,
     marginBottom: SPACING.lg,
   },
   agentAvatar: {
-    width: 54,
-    height: 54,
+    width: 50,
+    height: 50,
     borderRadius: RADIUS.full,
   },
   agentInfo: {
@@ -937,19 +1504,16 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   agentName: {
-    fontSize: 16,
+    fontSize: 15.5,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   agentRole: {
-    fontSize: 12.5,
-    color: COLORS.textSecondary,
+    fontSize: 12,
     marginTop: 1,
   },
   agentStats: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.primary,
     marginTop: 3,
   },
   agentActions: {
@@ -957,23 +1521,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   agentIconBtn: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     borderRadius: RADIUS.full,
-    backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   neighborhoodCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.lg,
     padding: SPACING.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
     marginBottom: SPACING.lg,
-    ...SHADOWS.subtle,
   },
   scoreRow: {
     flexDirection: 'row',
@@ -981,139 +1540,173 @@ const styles = StyleSheet.create({
   },
   scoreBox: {
     flex: 1,
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.md,
-    paddingVertical: 12,
+    paddingVertical: 11,
     paddingHorizontal: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   scoreNum: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: COLORS.primary,
+    fontSize: 19,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   scoreLabel: {
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginTop: 2,
   },
   scoreTag: {
-    backgroundColor: COLORS.primaryLight,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: RADIUS.full,
-    marginTop: 6,
+    marginTop: 5,
   },
   scoreTagText: {
-    fontSize: 10.5,
+    fontSize: 10,
     fontWeight: '700',
-    color: COLORS.primary,
   },
   transitDivider: {
     height: 1,
-    backgroundColor: COLORS.border,
     marginVertical: 14,
   },
   transitRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 9,
     gap: 12,
   },
   transitRowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   transitIconBox: {
-    width: 34,
-    height: 34,
-    borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.primaryLight,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
   transitName: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   transitType: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
+    fontSize: 11.5,
     marginTop: 1,
   },
   transitDetail: {
-    fontSize: 12.5,
+    fontSize: 12,
     fontWeight: '700',
-    color: COLORS.primary,
+    fontVariant: ['tabular-nums'],
   },
   mapWrapper: {
-    height: 170,
+    height: 165,
     borderRadius: RADIUS.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   miniMap: {
     flex: 1,
+  },
+  galleryGrid: {
+    gap: 12,
+  },
+  galleryGridCard: {
+    height: 200,
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+  },
+  galleryGridImg: {
+    width: '100%',
+    height: '100%',
+  },
+  reviewsList: {
+    gap: 12,
+  },
+  reviewCard: {
+    padding: 14,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  reviewAuthor: {
+    fontSize: 14.5,
+    fontWeight: '700',
+  },
+  reviewMeta: {
+    fontSize: 12,
+    marginTop: 1,
+  },
+  reviewScorePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: RADIUS.full,
+  },
+  reviewScoreText: {
+    fontSize: 12,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  reviewComment: {
+    fontSize: 13.5,
+    lineHeight: 20,
   },
   bottomBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: COLORS.white,
     paddingHorizontal: SPACING.lg,
     paddingTop: 14,
-    paddingBottom: 28,
+    paddingBottom: 26,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
     ...SHADOWS.medium,
   },
   priceCaption: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
+    fontSize: 11.5,
+    fontWeight: '500',
   },
   bottomPrice: {
-    fontSize: 21,
-    fontWeight: '800',
-    color: COLORS.primary,
+    fontSize: 20,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   bottomPeriod: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: COLORS.textSecondary,
+    fontSize: 12.5,
+    fontWeight: '400',
   },
   ctaButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 22,
+    paddingHorizontal: 28,
     paddingVertical: 14,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.full,
   },
   ctaText: {
-    color: COLORS.white,
+    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(20,23,26,0.45)',
+    backgroundColor: 'rgba(17, 20, 19, 0.45)',
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    backgroundColor: COLORS.white,
     borderTopLeftRadius: RADIUS.xl,
     borderTopRightRadius: RADIUS.xl,
     padding: SPACING.lg,
+    borderTopWidth: 1,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1122,37 +1715,25 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   modalTitle: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '700',
-    color: COLORS.textPrimary,
   },
   modalLabel: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginBottom: 10,
   },
   slotPill: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: RADIUS.md,
-    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: COLORS.border,
     marginRight: 10,
     marginBottom: 10,
   },
-  slotPillActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
   slotText: {
-    fontSize: 13.5,
+    fontSize: 13,
     fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  slotTextActive: {
-    color: COLORS.white,
   },
   timeGrid: {
     flexDirection: 'row',
@@ -1160,13 +1741,12 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   confirmBtn: {
-    backgroundColor: COLORS.primary,
     paddingVertical: 15,
     borderRadius: RADIUS.md,
     alignItems: 'center',
   },
   confirmBtnText: {
-    color: COLORS.white,
+    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
   },
