@@ -14,33 +14,75 @@ import { CITIES } from '../data/mockData';
 import { useApp } from '../context/AppContext';
 
 export default function HeaderBar({ onOpenCompare, onOpenProfile }) {
-  const { selectedCity, setSelectedCity, compareList, colors } = useApp();
+  const {
+    selectedCity,
+    setSelectedCity,
+    compareList,
+    isDarkMode,
+    toggleTheme,
+    colors,
+  } = useApp();
   const [cityModalVisible, setCityModalVisible] = useState(false);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View>
-        <Text style={[styles.locationCaption, { color: colors.textMuted }]}>
-          Location
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.background,
+          borderBottomColor: colors.border,
+        },
+      ]}
+    >
+      {/* Left: Market Selector */}
+      <View style={styles.leftCol}>
+        <Text style={[styles.eyebrow, { color: colors.textMuted }]}>
+          ESTATEX PORTFOLIO
         </Text>
         <TouchableOpacity
           style={styles.locationRow}
           activeOpacity={0.75}
           onPress={() => setCityModalVisible(true)}
         >
-          <Ionicons name="location" size={16} color={colors.primary} />
-          <Text style={[styles.cityText, { color: colors.textPrimary }]}>
+          <Ionicons name="location" size={15} color={colors.primary} />
+          <Text
+            style={[styles.cityText, { color: colors.textPrimary }]}
+            numberOfLines={1}
+          >
             {selectedCity}
           </Text>
-          <Ionicons
-            name="chevron-down"
-            size={15}
-            color={colors.textSecondary}
-          />
+          <View
+            style={[
+              styles.chevronCircle,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <Ionicons
+              name="chevron-down"
+              size={12}
+              color={colors.textSecondary}
+            />
+          </View>
         </TouchableOpacity>
       </View>
 
+      {/* Right: Theme Switch, Compare Counter & Client Avatar */}
       <View style={styles.actionsRow}>
+        <TouchableOpacity
+          style={[
+            styles.iconBtn,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+          activeOpacity={0.8}
+          onPress={toggleTheme}
+        >
+          <Ionicons
+            name={isDarkMode ? 'sunny-outline' : 'moon-outline'}
+            size={17}
+            color={colors.textPrimary}
+          />
+        </TouchableOpacity>
+
         {compareList.length > 0 && (
           <TouchableOpacity
             style={[
@@ -55,7 +97,7 @@ export default function HeaderBar({ onOpenCompare, onOpenProfile }) {
           >
             <Ionicons
               name="git-compare-outline"
-              size={18}
+              size={17}
               color={colors.primary}
             />
             <View style={[styles.badge, { backgroundColor: colors.primary }]}>
@@ -63,21 +105,6 @@ export default function HeaderBar({ onOpenCompare, onOpenProfile }) {
             </View>
           </TouchableOpacity>
         )}
-
-        <TouchableOpacity
-          style={[
-            styles.iconBtn,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}
-          activeOpacity={0.8}
-        >
-          <Ionicons
-            name="notifications-outline"
-            size={19}
-            color={colors.textPrimary}
-          />
-          <View style={[styles.notifDot, { backgroundColor: colors.primary }]} />
-        </TouchableOpacity>
 
         <TouchableOpacity
           activeOpacity={0.85}
@@ -90,10 +117,16 @@ export default function HeaderBar({ onOpenCompare, onOpenProfile }) {
             }}
             style={styles.avatar}
           />
+          <View
+            style={[
+              styles.onlineDot,
+              { backgroundColor: colors.primary, borderColor: colors.background },
+            ]}
+          />
         </TouchableOpacity>
       </View>
 
-      {/* City Selector Modal */}
+      {/* Market Selection Modal */}
       <Modal
         visible={cityModalVisible}
         transparent
@@ -111,9 +144,28 @@ export default function HeaderBar({ onOpenCompare, onOpenProfile }) {
               { backgroundColor: colors.card, borderColor: colors.border },
             ]}
           >
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              Select Market
-            </Text>
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+                  Select Market
+                </Text>
+                <Text
+                  style={[styles.modalSub, { color: colors.textSecondary }]}
+                >
+                  Filter portfolio by metropolitan region
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setCityModalVisible(false)}
+                style={[
+                  styles.modalCloseBtn,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                ]}
+              >
+                <Ionicons name="close" size={18} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
             <FlatList
               data={CITIES}
               keyExtractor={(item) => item}
@@ -123,26 +175,37 @@ export default function HeaderBar({ onOpenCompare, onOpenProfile }) {
                   <TouchableOpacity
                     style={[
                       styles.cityOption,
-                      active && { backgroundColor: colors.primaryLight },
+                      {
+                        backgroundColor: active
+                          ? colors.primaryLight
+                          : 'transparent',
+                      },
                     ]}
                     onPress={() => {
                       setSelectedCity(item);
                       setCityModalVisible(false);
                     }}
                   >
-                    <Text
-                      style={[
-                        styles.cityOptionText,
-                        { color: colors.textPrimary },
-                        active && { color: colors.primary, fontWeight: '700' },
-                      ]}
-                    >
-                      {item}
-                    </Text>
+                    <View style={styles.cityOptionLeft}>
+                      <Ionicons
+                        name={active ? 'location' : 'location-outline'}
+                        size={17}
+                        color={active ? colors.primary : colors.textSecondary}
+                      />
+                      <Text
+                        style={[
+                          styles.cityOptionText,
+                          { color: colors.textPrimary },
+                          active && { color: colors.primary, fontWeight: '700' },
+                        ]}
+                      >
+                        {item}
+                      </Text>
+                    </View>
                     {active && (
                       <Ionicons
-                        name="checkmark"
-                        size={18}
+                        name="checkmark-circle"
+                        size={19}
                         color={colors.primary}
                       />
                     )}
@@ -166,20 +229,33 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.sm,
     paddingBottom: 14,
   },
-  locationCaption: {
-    fontSize: 11.5,
-    fontWeight: '500',
-    marginBottom: 2,
+  leftCol: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  eyebrow: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.3,
+    marginBottom: 3,
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 6,
   },
   cityText: {
-    fontSize: 16.5,
-    fontWeight: '700',
-    letterSpacing: -0.3,
+    fontSize: 17.5,
+    fontWeight: '800',
+    letterSpacing: -0.4,
+  },
+  chevronCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: RADIUS.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
   },
   actionsRow: {
     flexDirection: 'row',
@@ -210,42 +286,62 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     fontWeight: '700',
   },
-  notifDot: {
-    position: 'absolute',
-    top: 9,
-    right: 10,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
   avatarWrap: {
     width: 38,
     height: 38,
     borderRadius: RADIUS.full,
     borderWidth: 1.5,
     padding: 1.5,
+    position: 'relative',
   },
   avatar: {
     width: '100%',
     height: '100%',
     borderRadius: RADIUS.full,
   },
+  onlineDot: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 1.5,
+  },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(17, 20, 19, 0.4)',
+    backgroundColor: 'rgba(17, 20, 19, 0.45)',
     justifyContent: 'center',
     padding: SPACING.lg,
   },
   modalCard: {
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     padding: SPACING.lg,
     borderWidth: 1,
     ...SHADOWS.medium,
   },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: SPACING.md,
+  },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    marginBottom: SPACING.md,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  modalSub: {
+    fontSize: 12.5,
+    marginTop: 2,
+  },
+  modalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: RADIUS.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
   },
   cityOption: {
     flexDirection: 'row',
@@ -255,6 +351,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: RADIUS.md,
     marginBottom: 4,
+  },
+  cityOptionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   cityOptionText: {
     fontSize: 15,

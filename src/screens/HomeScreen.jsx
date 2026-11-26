@@ -6,16 +6,19 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
+  ImageBackground,
   FlatList,
   StyleSheet,
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SPACING, RADIUS, SHADOWS } from '../theme/theme';
 import {
   PROPERTIES,
   CATEGORIES,
+  CURATED_COLLECTIONS,
   MARKET_INSIGHTS,
 } from '../data/mockData';
 import { useApp } from '../context/AppContext';
@@ -23,24 +26,36 @@ import HeaderBar from '../components/HeaderBar';
 import FilterModal from '../components/FilterModal';
 
 const { width } = Dimensions.get('window');
-const REC_CARD_WIDTH = width * 0.64;
+const REC_CARD_WIDTH = width * 0.68;
 
 export default function HomeScreen({ navigation }) {
-  const { colors, wishlist, toggleWishlist } = useApp();
+  const { colors, wishlist, toggleWishlist, compareList, toggleCompare, filters } =
+    useApp();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchText, setSearchText] = useState('');
   const [filterVisible, setFilterVisible] = useState(false);
 
+  const hasActiveModalFilters =
+    filters.category !== 'all' ||
+    filters.minPrice > 0 ||
+    filters.maxPrice < 10000000 ||
+    filters.beds > 0;
+
   const filteredListings = useMemo(() => {
     return PROPERTIES.filter((item) => {
+      const effectiveCat =
+        selectedCategory !== 'all' ? selectedCategory : filters.category;
       const matchesCategory =
-        selectedCategory === 'all' || item.category === selectedCategory;
+        effectiveCat === 'all' || item.category === effectiveCat;
+      const matchesPrice =
+        item.price >= filters.minPrice && item.price <= filters.maxPrice;
+      const matchesBeds = item.beds >= filters.beds;
       const matchesSearch =
         item.title.toLowerCase().includes(searchText.toLowerCase()) ||
         item.location.toLowerCase().includes(searchText.toLowerCase());
-      return matchesCategory && matchesSearch;
+      return matchesCategory && matchesPrice && matchesBeds && matchesSearch;
     });
-  }, [selectedCategory, searchText]);
+  }, [selectedCategory, searchText, filters]);
 
   const recommendedList = useMemo(() => {
     return filteredListings.length > 0 ? filteredListings : PROPERTIES;
@@ -57,6 +72,8 @@ export default function HomeScreen({ navigation }) {
 
   const renderRecommendedCard = ({ item }) => {
     const isSaved = wishlist.includes(item.id);
+    const isComparing = compareList.includes(item.id);
+
     return (
       <TouchableOpacity
         activeOpacity={0.92}
@@ -66,22 +83,53 @@ export default function HomeScreen({ navigation }) {
           { backgroundColor: colors.card, borderColor: colors.border },
         ]}
       >
-        {/* Framed Top Photo */}
+        {/* Framed Architectural Image */}
         <View style={styles.recImageWrap}>
           <Image source={{ uri: item.images[0] }} style={styles.recImage} />
-          <TouchableOpacity
-            style={[
-              styles.recHeartBtn,
-              { backgroundColor: colors.card, borderColor: colors.border },
-            ]}
-            onPress={() => toggleWishlist(item.id)}
-          >
-            <Ionicons
-              name={isSaved ? 'heart' : 'heart-outline'}
-              size={16}
-              color={isSaved ? colors.danger : colors.textPrimary}
-            />
-          </TouchableOpacity>
+
+          {item.badge && (
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: 'rgba(17, 20, 19, 0.72)' },
+              ]}
+            >
+              <Text style={styles.statusBadgeText}>{item.badge}</Text>
+            </View>
+          )}
+
+          <View style={styles.recCardActions}>
+            <TouchableOpacity
+              style={[
+                styles.recCircleBtn,
+                {
+                  backgroundColor: isComparing ? colors.primary : colors.card,
+                  borderColor: isComparing ? colors.primary : colors.border,
+                },
+              ]}
+              onPress={() => toggleCompare(item.id)}
+            >
+              <Ionicons
+                name="git-compare-outline"
+                size={14}
+                color={isComparing ? '#FFFFFF' : colors.textPrimary}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.recCircleBtn,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+              onPress={() => toggleWishlist(item.id)}
+            >
+              <Ionicons
+                name={isSaved ? 'heart' : 'heart-outline'}
+                size={15}
+                color={isSaved ? colors.danger : colors.textPrimary}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Category Pill & Star Rating */}
@@ -98,14 +146,14 @@ export default function HomeScreen({ navigation }) {
           </View>
 
           <View style={styles.ratingRow}>
-            <Ionicons name="star" size={13} color={colors.gold} />
+            <Ionicons name="star" size={12.5} color={colors.gold} />
             <Text style={[styles.ratingText, { color: colors.textSecondary }]}>
               {item.rating}
             </Text>
           </View>
         </View>
 
-        {/* Title, Pin Location & Price */}
+        {/* Title & Pin Location */}
         <Text
           style={[styles.recTitle, { color: colors.textPrimary }]}
           numberOfLines={1}
@@ -127,12 +175,20 @@ export default function HomeScreen({ navigation }) {
           </Text>
         </View>
 
-        <Text style={[styles.recPrice, { color: colors.primary }]}>
-          {item.priceFormatted}
-          <Text style={[styles.recPeriod, { color: colors.textSecondary }]}>
-            {item.period || ' / total'}
+        {/* Specs & Emerald Price Footer */}
+        <View style={[styles.recFooter, { borderTopColor: colors.border }]}>
+          <Text style={[styles.recPrice, { color: colors.primary }]}>
+            {item.priceFormatted}
+            <Text style={[styles.recPeriod, { color: colors.textSecondary }]}>
+              {item.period}
+            </Text>
           </Text>
-        </Text>
+
+          <Text style={[styles.recSpecs, { color: colors.textMuted }]}>
+            {item.beds > 0 ? `${item.beds} bd · ` : ''}
+            {item.sqft.toLocaleString()} ft²
+          </Text>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -153,7 +209,7 @@ export default function HomeScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Clean Search Bar + Solid Emerald Filter Square */}
+        {/* Clean Search Input + Solid Emerald Filter Button */}
         <View style={styles.searchRow}>
           <View
             style={[
@@ -171,7 +227,7 @@ export default function HomeScreen({ navigation }) {
             />
             <TextInput
               style={[styles.searchInput, { color: colors.textPrimary }]}
-              placeholder="Search"
+              placeholder="Search residences, neighborhoods..."
               placeholderTextColor={colors.textMuted}
               value={searchText}
               onChangeText={setSearchText}
@@ -193,17 +249,22 @@ export default function HomeScreen({ navigation }) {
             onPress={() => setFilterVisible(true)}
           >
             <Ionicons name="options-outline" size={20} color="#FFFFFF" />
+            {hasActiveModalFilters && <View style={styles.activeFilterDot} />}
           </TouchableOpacity>
         </View>
 
         {/* Circular Category Medallions */}
-        <View style={styles.circleCatGrid}>
-          {CATEGORIES.slice(0, 4).map((cat) => {
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.circleCatScroll}
+        >
+          {CATEGORIES.map((cat) => {
             const active = selectedCategory === cat.id;
             return (
               <TouchableOpacity
                 key={cat.id}
-                activeOpacity={0.8}
+                activeOpacity={0.82}
                 style={styles.circleCatItem}
                 onPress={() => setSelectedCategory(cat.id)}
               >
@@ -220,7 +281,7 @@ export default function HomeScreen({ navigation }) {
                 >
                   <Ionicons
                     name={cat.icon}
-                    size={22}
+                    size={21}
                     color={active ? '#FFFFFF' : colors.primary}
                   />
                 </View>
@@ -238,13 +299,15 @@ export default function HomeScreen({ navigation }) {
               </TouchableOpacity>
             );
           })}
-        </View>
+        </ScrollView>
 
         {/* Recommended Property Section */}
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            Recommended Property
-          </Text>
+          <View>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              Recommended Property
+            </Text>
+          </View>
           <TouchableOpacity onPress={() => navigation.navigate('Explore')}>
             <Text style={[styles.seeAll, { color: colors.primary }]}>
               See all
@@ -270,7 +333,7 @@ export default function HomeScreen({ navigation }) {
           </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Explore')}>
             <Text style={[styles.seeAll, { color: colors.primary }]}>
-              See all
+              Map view
             </Text>
           </TouchableOpacity>
         </View>
@@ -331,7 +394,7 @@ export default function HomeScreen({ navigation }) {
                     {item.title}
                   </Text>
 
-                  <View style={styles.locRow}>
+                  <View style={styles.locRowCompact}>
                     <Ionicons
                       name="location-outline"
                       size={12.5}
@@ -363,16 +426,27 @@ export default function HomeScreen({ navigation }) {
                       </Text>
                     </Text>
 
-                    <TouchableOpacity
-                      onPress={() => toggleWishlist(item.id)}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                      <Ionicons
-                        name={isSaved ? 'heart' : 'heart-outline'}
-                        size={17}
-                        color={isSaved ? colors.danger : colors.textMuted}
-                      />
-                    </TouchableOpacity>
+                    <View style={styles.nearbyRightMeta}>
+                      <Text
+                        style={[
+                          styles.nearbySpecs,
+                          { color: colors.textMuted },
+                        ]}
+                      >
+                        {item.beds > 0 ? `${item.beds} bd · ` : ''}
+                        {item.sqft.toLocaleString()} ft²
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => toggleWishlist(item.id)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Ionicons
+                          name={isSaved ? 'heart' : 'heart-outline'}
+                          size={17}
+                          color={isSaved ? colors.danger : colors.textMuted}
+                        />
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -380,13 +454,54 @@ export default function HomeScreen({ navigation }) {
           })}
         </View>
 
+        {/* Curated Architectural Collections */}
+        <View style={[styles.sectionHeader, { marginTop: SPACING.lg }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            Curated Collections
+          </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Explore')}>
+            <Text style={[styles.seeAll, { color: colors.primary }]}>
+              Explore
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.collectionsRow}
+        >
+          {CURATED_COLLECTIONS.map((col) => (
+            <TouchableOpacity
+              key={col.id}
+              activeOpacity={0.9}
+              style={[styles.collectionCard, { borderColor: colors.border }]}
+              onPress={() => navigation.navigate('Explore')}
+            >
+              <ImageBackground
+                source={{ uri: col.image }}
+                style={styles.collectionImg}
+                imageStyle={{ borderRadius: RADIUS.lg }}
+              >
+                <LinearGradient
+                  colors={['rgba(17,20,19,0.06)', 'rgba(17,20,19,0.84)']}
+                  style={styles.collectionGrad}
+                >
+                  <Text style={styles.collectionTitle}>{col.title}</Text>
+                  <Text style={styles.collectionCount}>{col.count}</Text>
+                </LinearGradient>
+              </ImageBackground>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
         {/* Market Pulse Strip */}
-        <View style={[styles.sectionHeader, { marginTop: SPACING.md }]}>
+        <View style={[styles.sectionHeader, { marginTop: SPACING.lg }]}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
             Market Pulse
           </Text>
           <Text style={[styles.metaLabel, { color: colors.textMuted }]}>
-            Q4 Data
+            Q4 Advisory
           </Text>
         </View>
 
@@ -403,9 +518,23 @@ export default function HomeScreen({ navigation }) {
                 { backgroundColor: colors.surface, borderColor: colors.border },
               ]}
             >
-              <Text style={[styles.insightMetric, { color: colors.primary }]}>
-                {ins.metric}
-              </Text>
+              <View style={styles.insightTopRow}>
+                <Text style={[styles.insightMetric, { color: colors.primary }]}>
+                  {ins.metric}
+                </Text>
+                <View
+                  style={[
+                    styles.trendPill,
+                    { backgroundColor: colors.primaryLight },
+                  ]}
+                >
+                  <Ionicons
+                    name="trending-up"
+                    size={13}
+                    color={colors.primary}
+                  />
+                </View>
+              </View>
               <Text
                 style={[styles.insightLabel, { color: colors.textPrimary }]}
               >
@@ -434,14 +563,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 36,
+    paddingBottom: 38,
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: SPACING.lg,
     gap: 10,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
   },
   searchInputBox: {
     flex: 1,
@@ -463,29 +592,39 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
     ...SHADOWS.subtle,
   },
-  circleCatGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  activeFilterDot: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#D4A838',
+  },
+  circleCatScroll: {
     paddingHorizontal: SPACING.lg,
-    marginBottom: SPACING.lg,
+    paddingVertical: 6,
+    gap: 16,
+    marginBottom: SPACING.md,
   },
   circleCatItem: {
     alignItems: 'center',
-    width: '22%',
+    width: 64,
   },
   circleMedallion: {
-    width: 58,
-    height: 58,
+    width: 56,
+    height: 56,
     borderRadius: RADIUS.full,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    marginBottom: 8,
+    marginBottom: 7,
   },
   circleCatLabel: {
-    fontSize: 12.5,
+    fontSize: 12,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -496,8 +635,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 17.5,
-    fontWeight: '700',
-    letterSpacing: -0.3,
+    fontWeight: '800',
+    letterSpacing: -0.35,
   },
   seeAll: {
     fontSize: 13,
@@ -519,7 +658,7 @@ const styles = StyleSheet.create({
     ...SHADOWS.subtle,
   },
   recImageWrap: {
-    height: 152,
+    height: 158,
     borderRadius: RADIUS.md,
     overflow: 'hidden',
     position: 'relative',
@@ -529,12 +668,31 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  recHeartBtn: {
+  statusBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  statusBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  recCardActions: {
     position: 'absolute',
     top: 8,
     right: 8,
-    width: 32,
-    height: 32,
+    flexDirection: 'row',
+    gap: 6,
+  },
+  recCircleBtn: {
+    width: 31,
+    height: 31,
     borderRadius: RADIUS.full,
     justifyContent: 'center',
     alignItems: 'center',
@@ -567,29 +725,47 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   recTitle: {
-    fontSize: 15,
+    fontSize: 15.5,
     fontWeight: '700',
-    letterSpacing: -0.2,
+    letterSpacing: -0.25,
     marginBottom: 3,
   },
   locRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginBottom: 8,
+    marginBottom: 10,
+  },
+  locRowCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   recLocation: {
     fontSize: 12,
     flex: 1,
   },
+  recFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 9,
+    borderTopWidth: 1,
+  },
   recPrice: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
     fontVariant: ['tabular-nums'],
+    letterSpacing: -0.2,
   },
   recPeriod: {
     fontSize: 11.5,
     fontWeight: '400',
+  },
+  recSpecs: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
   },
   nearbyList: {
     paddingHorizontal: SPACING.lg,
@@ -604,8 +780,8 @@ const styles = StyleSheet.create({
     ...SHADOWS.subtle,
   },
   nearbyThumb: {
-    width: 96,
-    height: 96,
+    width: 98,
+    height: 98,
     borderRadius: RADIUS.md,
   },
   nearbyBody: {
@@ -621,7 +797,6 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
     fontWeight: '700',
     letterSpacing: -0.2,
-    marginTop: 2,
   },
   nearbyLocation: {
     fontSize: 12,
@@ -632,9 +807,52 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  nearbyRightMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  nearbySpecs: {
+    fontSize: 11,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
+  },
   nearbyPrice: {
     fontSize: 15,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+  },
+  collectionsRow: {
+    paddingHorizontal: SPACING.lg,
+    gap: 12,
+  },
+  collectionCard: {
+    width: 178,
+    height: 124,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
+    ...SHADOWS.subtle,
+  },
+  collectionImg: {
+    flex: 1,
+  },
+  collectionGrad: {
+    flex: 1,
+    padding: 12,
+    justifyContent: 'flex-end',
+  },
+  collectionTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  collectionCount: {
+    color: '#D8DEDB',
+    fontSize: 11.5,
+    fontWeight: '500',
+    marginTop: 2,
     fontVariant: ['tabular-nums'],
   },
   insightsRow: {
@@ -642,20 +860,32 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   insightCard: {
-    width: 160,
+    width: 172,
     padding: 14,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
   },
+  insightTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  trendPill: {
+    width: 24,
+    height: 24,
+    borderRadius: RADIUS.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   insightMetric: {
     fontSize: 19,
-    fontWeight: '700',
+    fontWeight: '800',
     fontVariant: ['tabular-nums'],
   },
   insightLabel: {
     fontSize: 13,
-    fontWeight: '600',
-    marginTop: 4,
+    fontWeight: '700',
+    marginTop: 6,
   },
   insightSub: {
     fontSize: 11.5,
